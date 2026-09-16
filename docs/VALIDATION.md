@@ -1,23 +1,29 @@
-# Validation — September 12, 2026
+# Validation — September 15, 2026
 
-## Final mathematical redesign
+## Build and source checks
 
-- The final TypeScript and Vite production builds passed. The combined `npm run build` process hit the host's roughly 128 MB Node heap ceiling after earlier successful runs, so the same two build stages were rerun separately with a 1 GB build-only heap allowance; both passed.
-- Prettier passed for all application, component, configuration, and current design/content documentation files.
-- `git diff --check` passed.
-- A direct request to `http://127.0.0.1:5173/` returned HTTP 200 before browser validation.
-- Chromium covered 12 routes at widths of 320, 390, 768, and 1440 pixels (48 combinations): home, About, project index, four project details, gallery, thought index, sample thought, contact, and missing page. Every case had one `main` landmark, one primary heading, no document-level horizontal overflow, and no page or console errors.
-- Visually inspected the full-motion landing at desktop and mobile widths, the pinned midpoint composition, About, the animated code intro, and the final subdued palette.
-- Verified the multilingual intro changes greetings, animates its computational canvas, completes automatically, and remains dismissed for the browser-tab session.
-- Verified the main procedural canvas changes over time. The automated browser throttles background animation frames heavily, so frame comparisons used a 1.6-second interval.
-- Verified pointer movement shows the cursor companion, and hovering the Transform control expands its interactive state. Activating Transform changes its pressed state.
-- Verified the pinned landing remains fixed while the name fades fully out and “Between logic & possibility.” fades fully in at the tested 960-pixel scroll position.
-- Verified manual motion-off removes the cursor companion and freezes the canvas; restoring motion remounts the cursor and restarts canvas animation.
-- Verified system reduced motion uses the static experience in the responsive route matrix.
-- Verified keyboard focus on the fourth project changes the visual index to `04`, and activating it navigates to the Projector detail page.
-- Verified mobile navigation exposes Home, About, Projects, Gallery, Thoughts, and Contact. Escape closes it after its exit animation and restores focus to the menu control.
-- Verified 200% text enlargement at 390 and 1440 pixels without document or header overflow; the landing tagline remains above the bottom control line.
+- TypeScript: `node --max-old-space-size=1024 .\node_modules\typescript\bin\tsc -b` passed.
+- Production build: Vite built 453 modules successfully with the explicit 1 GB build heap.
+- Prettier and `git diff --check` passed for this revision.
 
-The production JavaScript is approximately 139 KB gzip. Canvas rendering is capped at 40 FPS and a 1.75 device-pixel ratio, and pauses when offscreen or hidden. Fonts are bundled locally. No project screenshot, photograph, contact detail, or factual project description has been fabricated.
+## Browser checks
 
-Physical-device Safari and Firefox, real supplied media, and production-host behavior remain unverified. The repository supplies a static-host SPA redirect, but it has not been deployed.
+- Inspected the requested Dennis Snellenberg and Khanh Nguyen references in the browser.
+- Verified the greeting screen uses the shared code background and the hero follows with the figure/name entrance.
+- Visually inspected desktop and mobile hero/role states. Confirmed intermediate role opacities occur in order, with unrevealed lines translated below their masks; completed lines reach opacity 1.
+- Confirmed one main landmark and one primary heading, and the Home section order: home, about, projects, gallery, thoughts, contact.
+- Checked 1280px desktop, 768px tablet, 390px mobile, and 320px mobile layouts without horizontal document overflow. All five navigation links fit on one line at 320px.
+- Verified More about me opens About, Home returns to the hero, Projects and Contact anchors work, and browser Back returns from a project detail to the project index position.
+- Tested direct `/gallery`, `/thoughts`, and `/contact` redirects plus `/about`, `/projects/eidolon`, and `/thoughts/on-noticing` at 768px. Each had one main, one h1, and no document overflow.
+- Verified the manual Motion off control exposes all four role lines and page text immediately, with no residual hidden reveal elements.
+
+## Scope
+
+Browser checks used the Codex in-app Chromium browser. Physical-device Safari/Firefox and a production hosting environment were not tested. Photography and project media remain empty, contact values remain unset, and the existing thought remains labeled as a sample.
+
+## Follow-up visual correction
+
+- Rechecked the original stacked sans-serif identity at 1280×720, 390×844, 320×740, and 844×390. Name, role lines, figure, and metadata remain readable without horizontal document overflow.
+- Visually confirmed the central background contours are absent after the intro.
+- Switched through all five figures and verified each number, title, and mathematical study description.
+- Adjusted mobile separation between roles and geometry, and short-landscape clearance above the figure metadata.

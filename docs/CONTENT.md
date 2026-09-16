@@ -4,7 +4,7 @@ The editable portfolio content lives in [`src/content.ts`](../src/content.ts). T
 
 ## Profile
 
-`profile` contains the full displayed name, a two-part `tagline` (`lead` and italic `emphasis`), a short About-page introduction, and an `introIsDraft` flag. The landing separates the first name and surname into two lines. Replace the draft `intro` with final copy when it is ready, then set `introIsDraft` to `false`. Biography stays on `/about`; the name and tagline appear on `/`.
+`profile` contains the full displayed name, an introduction shared by Home and About, and an `introIsDraft` flag. The current introduction includes John's supplied fourth-year Computer Science and Mathematics studies at the University of Toronto. The name uses its original stacked Space Grotesk treatment on Home. The four role lines are defined in `Landing.tsx`. There is no tagline field.
 
 ## Projects
 

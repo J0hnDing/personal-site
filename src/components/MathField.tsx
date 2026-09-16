@@ -4,6 +4,7 @@ import "./math-field.css";
 
 type MathFieldProps = {
   variant?: "orbit" | "code";
+  contours?: boolean;
   progress?: MotionValue<number>;
   figure?: number;
   motionOff?: boolean;
@@ -595,6 +596,7 @@ function drawCodeContours(
 
 export default function MathField({
   variant = "orbit",
+  contours = true,
   progress,
   figure = 0,
   motionOff = false,
@@ -602,6 +604,8 @@ export default function MathField({
 }: MathFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const displayedFigure = useRef(figure);
+  const contoursEnabled = useRef(contours);
+  contoursEnabled.current = contours;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -665,7 +669,7 @@ export default function MathField({
           displayedFigure.current,
           still,
         );
-      } else {
+      } else if (contoursEnabled.current) {
         drawCodeContours(
           context,
           width,
