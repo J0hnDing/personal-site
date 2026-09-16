@@ -1,40 +1,24 @@
-# Progress checkpoint — September 12, 2026
+# Progress checkpoint — September 15, 2026
 
-## Completion update
+## Completed
 
-The checkpoint was resumed and all listed remaining work was completed. Final verification is recorded in [VALIDATION.md](VALIDATION.md). Projector has a pending completion proposal for TODO-001; no implementation work remains for this revision.
+- Converted Home into one continuous page: name and roles, quick introduction, Projects, Gallery, Thoughts, Contact.
+- Replaced the branded header/menu with five text links, including Home. About remains reachable from More about me.
+- Removed redundant page kickers, slogans, and repeated placeholder headlines.
+- Kept the intro's code background mounted; greetings fade away, the figure fades in, and the stacked sans-serif name rises from below.
+- Added sequential scroll reveals for A Student, A Software Developer, A Photographer, and A Thinker.
+- Applied a shared bottom-up reveal to content text, including content added later; preserved reduced-motion behavior.
+- Added John's supplied fourth-year Computer Science and Mathematics studies at the University of Toronto to the introduction.
+- Preserved existing project content, empty photography, labeled sample thought, and contact placeholders. Former index URLs redirect to their Home sections; detail pages remain available.
 
-## Current revision
+## Validation
 
-- Replaced bright yellow with graphite, silver, muted sage, dusty violet, and subdued project accents.
-- Changed the displayed identity to **John Ding**. Name and two-part tagline are configurable in `src/content.ts`.
-- Rebuilt `/` around “Finding beauty / in the logic.” and a large procedural mathematical wire form.
-- Added `/about` and moved the draft introductory paragraph there.
-- Added a native pinned scroll composition: the name moves out, the mathematical form shifts and enlarges, and “Between logic & possibility.” appears.
-- Added animated torus-knot geometry, pointer response, a spring-driven Transform control, and staggered computational symbols behind the multilingual intro.
-- Added a nonblocking custom cursor mark, stable-width text decoding, project/destination reveals, and page shutters. Native scrolling and the native pointer remain available.
-- Preserved all project details, the empty gallery, sample thought, and contact placeholders.
-- Added reduced-motion/static rendering, canvas offscreen/hidden-tab pausing, a 40 FPS ceiling, and DPR cap of 1.75.
-- Updated README, content guide, design notes, metadata, and favicon. Removed unused first-version hero styles.
-
-## Files
-
-Main integration: `src/App.tsx`, `src/content.ts`, `src/styles.css`, `index.html`, `public/favicon.svg`.
-
-New components: `src/components/Landing.tsx`, `landing.css`, `MathField.tsx`, `math-field.css`, `CursorMark.tsx`, `cursor-mark.css`, `ScrambleText.tsx`.
-
-Documentation: `README.md`, `docs/CONTENT.md`, `docs/DESIGN.md`, `docs/VALIDATION.md`.
-
-## Verified
-
-- The final TypeScript and Vite production build stages passed.
-- All 12 routes passed checks at 320, 390, 768, and 1440 pixels (48 combinations): no horizontal document overflow, one primary heading per page.
-- Visually inspected desktop/mobile landing and About, the code intro, and scroll states.
-- Verified cursor appearance and expansion over a real control, Transform state change, sticky positioning, About navigation, and six mobile navigation links.
-- Checked enlarged text at 200% on desktop/mobile: no document/header overflow and tagline remains above the bottom control line.
-- Fixed an observed native ViewTimeline opacity interpolation issue with function-derived MotionValues. Confirmed scroll positions 960 and 1200 show identity opacity 0 and statement opacity 1; the old overlapping-headline state is gone.
-- Browser console checks reported no current warnings or errors.
+TypeScript, Vite production build, formatting, and diff checks passed. Browser checks covered desktop, 768px tablet, 390px mobile, and 320px mobile; no horizontal document overflow was found. Verified five navigation links on one line at 320px, sequential role states, About, section navigation, project detail and Back, direct URL redirects, and the manual reduced-motion mode. See VALIDATION.md.
 
 ## Handoff
 
-The local Vite preview remains at **http://127.0.0.1:5173/**. No commit, push, or deployment was made. Physical-device Safari/Firefox, real supplied media, and production hosting remain unverified. No extra work-history proposal was created for this revision, preserving the project's one-per-session instruction.
+Development preview: http://127.0.0.1:5173/. No commit, push, or deployment. No implementation work remains for this requested revision. Projector work history is submitted as a pending proposal. Real project media, photographs, authored writing, and contact details remain to be supplied.
+
+## Follow-up visual correction
+
+Restored the original sans-serif JOHN / DING. name structure and figure number/title/study metadata. Removed central code-contour decoration after the intro while retaining the code glyph background. Raised and sized the figure to clear the bottom edge; mobile places it below the roles. Rechecked desktop, mobile, and short landscape layouts and all five figure metadata states. No additional Projector history proposal was created for this refinement.

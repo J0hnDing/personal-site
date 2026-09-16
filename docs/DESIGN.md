@@ -1,4 +1,4 @@
-# A work in curiosity
+# Portfolio design
 
 ## Reference study
 
@@ -17,16 +17,16 @@ The recurring aperture joins three activities without pretending to be a product
 
 Graphite supports silver type, muted sage, and dusty violet. The palette keeps color without a bright dominant surface. The gallery uses a subdued lavender, and writing retains a calm light surface. Space Grotesk carries structural typography, Georgia provides an italic counterpoint, and DM Mono marks indexes and computational annotations. Fonts are served locally.
 
-The landing presents John Ding's full name and “Finding beauty / in the logic.” A large mathematical wire form turns with time, pointer movement, and scroll. Scrolling shifts its center and scale as the name gives way to “Between logic & possibility.” The introduction lives on a separate About page. A destination index provides direct routes to the rest of the site.
+The landing presents a large, subtly stacked sans-serif name above four role lines. Five unboxed navigation words link to Home, Projects, Gallery, Thoughts, and Contact. About is reached through the quick introduction's “More about me” link. The full project index, gallery, thoughts, and contact content follow on the same page; individual project and thought details remain separate routes.
 
 ## Motion
 
-The multilingual greeting emerges from a soft blur and holds its opening English “Hello” for 1.5 seconds. It then accelerates through the middle of 21 interleaved languages and writing systems, progressively decelerates, and settles on Simplified Chinese “你好” for a 1.5-second hold. The sequence runs over staggered computational glyphs and Lissajous contours, followed by a curved upward curtain. It is session-scoped, skippable, and bypassed for reduced motion. Page changes use a brief nonblocking shutter; project rows and destination links reveal on entering view. Text decoding preserves link dimensions.
+The 21-language greeting sequence fades out instead of moving upward. Its code background stays mounted behind Home, while the mathematical figure fades in and the name rises through a mask. Scrolling reveals A Student, A Software Developer, A Photographer, and A Thinker in that order below the name. The quick introduction follows the hero.
 
-The landing uses a native sticky section, with scroll-driven geometry, type movement, and a two-phase crossfade. Opacity uses function-derived MotionValues so it shares the geometry's timeline instead of producing divergent native ViewTimeline interpolation. The Transform button changes the form with a spring. Header navigation stays available throughout the sequence.
+`useTextReveals` applies a shared bottom-up entrance to headings, paragraphs, captions, and relevant links/rows, including content added later. The hero owns its own scroll-driven masks. Navigation stays available as five text links, with no logo, tagline, border, or bar background.
 
-The cursor mark is a small mathematical crosshair that follows and expands around real controls. It preserves the browser cursor and never intercepts input; touch and reduced-motion users do not receive it. Canvas work is capped at 40 FPS and DPR 1.75, pauses offscreen and on hidden tabs, and uses no per-frame React rendering. Reduced motion renders full static geometry and collapses the pinned sequence. Scrolling remains native.
+Reduced motion bypasses the greeting and pinned sequence and presents all roles and other text immediately. The footer motion toggle retains the user's current position. The cursor companion and existing canvas frame/DPR limits remain in place. Canvas drawing pauses offscreen and on hidden tabs. All scrolling stays native.
 
 ## Content boundaries
 
-Only the four supplied project names are treated as project facts. Empty visual frames are explicitly labeled. The draft introduction is editable and marked. The gallery has no stock photography; actual images will activate its staggered collection and dialog viewer. One sample thought is explicitly identified as a layout demonstration, not John's writing. Contact destinations remain unset.
+Only the four supplied project names are treated as project facts. Empty visual frames are explicitly labeled. The editable introduction uses the study background supplied by John. The gallery has no stock photography; actual images will activate its staggered collection and dialog viewer. One sample thought is explicitly identified as a layout demonstration, not John's writing. Contact destinations remain unset.

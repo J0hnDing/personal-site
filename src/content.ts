@@ -9,7 +9,6 @@ export type ProjectIndex = "01" | "02" | "03" | "04";
 
 export interface Profile {
   name: string;
-  tagline: { lead: string; emphasis: string };
   intro: string;
   introIsDraft: boolean;
 }
@@ -81,10 +80,9 @@ export interface Content {
 
 export const profile: Profile = {
   name: "John Ding",
-  tagline: { lead: "Finding beauty", emphasis: "in the logic." },
   intro:
-    "I’m John Ding. My studies draw me to mathematics; my projects explore software. This is where I collect what I build, photograph, and think about.",
-  introIsDraft: true,
+    "Hi, I’m John, a fourth-year Computer Science & Mathematics student at the University of Toronto. This is where I collect what I build, photograph, and think about.",
+  introIsDraft: false,
 };
 
 export const projects: Project[] = [

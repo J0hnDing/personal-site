@@ -9,7 +9,7 @@ import {
 } from "react";
 import {
   Link,
-  NavLink,
+  Navigate,
   Route,
   Routes,
   useLocation,
@@ -25,12 +25,11 @@ import { contacts, photography, profile, projects, thoughts } from "./content";
 import Landing from "./components/Landing";
 import MathField from "./components/MathField";
 import CursorMark from "./components/CursorMark";
-import ScrambleText from "./components/ScrambleText";
+import { useTextReveals } from "./components/useTextReveals";
 
 const ease = [0.76, 0, 0.24, 1] as const;
 const MotionPreference = createContext(false);
 const scrollPositions = new Map<string, number>();
-const AnimatedLink = motion.create(Link);
 const introGreetings = [
   { text: "Hello", hold: 1500 },
   { text: "Bonjour", hold: 320 },
@@ -55,11 +54,11 @@ const introGreetings = [
   { text: "你好", hold: 1500 },
 ] as const;
 const nav = [
-  ["About", "/about"],
-  ["Projects", "/projects"],
-  ["Gallery", "/gallery"],
-  ["Thoughts", "/thoughts"],
-  ["Contact", "/contact"],
+  ["Home", "/#home"],
+  ["Projects", "/#projects"],
+  ["Gallery", "/#gallery"],
+  ["Thoughts", "/#thoughts"],
+  ["Contact", "/#contact"],
 ];
 const Arrow = () => (
   <span aria-hidden="true" className="arrow">
@@ -121,12 +120,10 @@ function Intro({ done }: { done: () => void }) {
   return (
     <motion.div
       className="intro"
-      exit={{ y: "-100%", borderRadius: "0 0 45% 45%" }}
+      exit={{ opacity: 0 }}
       transition={{ duration: 0.85, ease }}
     >
-      <MathField variant="code" className="intro-code-field" />
       <div className="intro-top mono">
-        <span>JOHN DING / PERSONAL SPACE</span>
         <button onClick={done}>Skip intro ↗</button>
       </div>
       <motion.div
@@ -140,117 +137,31 @@ function Intro({ done }: { done: () => void }) {
         {introGreetings[index].text}
       </motion.div>
       <span className="sr-only">Welcome to John Ding's portfolio.</span>
-      <div className="intro-bottom mono">
-        <span>A WORK IN CURIOSITY</span>
-        <span>
-          ({String(index + 1).padStart(2, "0")} / {introGreetings.length})
-        </span>
-      </div>
     </motion.div>
   );
 }
 
-function Header({
-  menu,
-  setMenu,
-}: {
-  menu: boolean;
-  setMenu: (open: boolean) => void;
-}) {
-  const motionOff = useContext(MotionPreference);
+function Header() {
   const location = useLocation();
-  const button = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const desktop = window.matchMedia("(min-width: 761px)");
-    const closeOnDesktop = () => {
-      if (desktop.matches) setMenu(false);
-    };
-    desktop.addEventListener("change", closeOnDesktop);
-    return () => desktop.removeEventListener("change", closeOnDesktop);
-  }, [setMenu]);
-  useEffect(() => {
-    if (!menu) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const links = menuRef.current?.querySelectorAll<HTMLAnchorElement>("a");
-    links?.[0]?.focus();
-    const key = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setMenu(false);
-        button.current?.focus();
-      }
-      if (e.key === "Tab" && links?.length) {
-        const nodes: HTMLElement[] = [button.current!, ...Array.from(links)];
-        const index = nodes.indexOf(document.activeElement as HTMLElement);
-        e.preventDefault();
-        nodes[
-          (index + (e.shiftKey ? -1 : 1) + nodes.length) % nodes.length
-        ]?.focus();
-      }
-    };
-    document.addEventListener("keydown", key);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", key);
-    };
-  }, [menu, setMenu]);
   return (
-    <>
-      <header
-        className={`site-header ${menu ? "menu-is-open" : ""} ${["/", "/projects", "/about"].includes(location.pathname) ? "dark-header" : ""}`}
-      >
-        <Link
-          className="wordmark"
-          to="/"
-          onClick={() => setMenu(false)}
-          aria-label="John Ding, home"
-        >
-          j<span className="brand-dot">.</span>
-        </Link>
-        <span className="header-caption mono">A WORK IN CURIOSITY</span>
-        <nav className="desktop-nav" aria-label="Main navigation">
-          {nav.map(([label, href]) => (
-            <NavLink key={href} to={href}>
-              <ScrambleText text={label} motionOff={motionOff} />
-            </NavLink>
-          ))}
-        </nav>
-        <button
-          ref={button}
-          className="menu-toggle mono"
-          aria-expanded={menu}
-          aria-controls="mobile-menu"
-          onClick={() => setMenu(!menu)}
-        >
-          {menu ? "Close −" : "Menu +"}
-        </button>
-      </header>
-      <AnimatePresence>
-        {menu && (
-          <motion.div
-            ref={menuRef}
-            id="mobile-menu"
-            className="mobile-menu"
-            initial={{ clipPath: "inset(0 0 100% 0)" }}
-            animate={{ clipPath: "inset(0 0 0% 0)" }}
-            exit={{ clipPath: "inset(0 0 100% 0)" }}
-            transition={{ duration: motionOff ? 0 : 0.45, ease }}
+    <header className="site-header">
+      <nav className="simple-nav" aria-label="Main navigation">
+        {nav.map(([label, href]) => (
+          <Link
+            key={href}
+            to={href}
+            aria-current={
+              location.pathname === "/" &&
+              (location.hash || "#home") === href.slice(1)
+                ? "location"
+                : undefined
+            }
           >
-            <nav aria-label="Mobile navigation">
-              {[["Home", "/"], ...nav].map(([label, href], i) => (
-                <Link key={href} to={href} onClick={() => setMenu(false)}>
-                  <span className="mono">0{i}</span>
-                  {label}
-                  <Arrow />
-                </Link>
-              ))}
-            </nav>
-            <span className="mono">PROJECTS, PICTURES & PASSING THOUGHTS.</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+            {label}
+          </Link>
+        ))}
+      </nav>
+    </header>
   );
 }
 
@@ -265,15 +176,27 @@ function Page({
   const navigationType = useNavigationType();
   const ref = useRef<HTMLElement>(null);
   const location = useLocation();
+  useTextReveals(ref, motionOff);
   useEffect(() => {
-    window.scrollTo({
-      top:
-        navigationType === "POP" ? scrollPositions.get(location.key) || 0 : 0,
-      behavior: "instant",
-    });
-    ref.current?.focus({ preventScroll: true });
+    const saved = scrollPositions.get(location.key);
+    const target =
+      location.hash && document.getElementById(location.hash.slice(1));
+    if (target && !(navigationType === "POP" && saved !== undefined)) {
+      target.scrollIntoView({
+        behavior: motionOff ? "instant" : "smooth",
+        block: "start",
+      });
+    } else
+      window.scrollTo({
+        top: navigationType === "POP" ? saved || 0 : 0,
+        behavior: "instant",
+      });
+    if (target) {
+      target.setAttribute("tabindex", "-1");
+      target.focus({ preventScroll: true });
+    } else ref.current?.focus({ preventScroll: true });
     const titles: Record<string, string> = {
-      "/": "A work in curiosity",
+      "/": "Home",
       "/about": "About",
       "/projects": "Projects",
       "/gallery": "Gallery",
@@ -284,23 +207,15 @@ function Page({
       projects.find((p) => location.pathname === `/projects/${p.slug}`) ||
       thoughts.find((p) => location.pathname === `/thoughts/${p.slug}`);
     document.title = `${item?.title || titles[location.pathname] || "Page not found"} — ${profile.name}`;
-    return () => {
+    const savePosition = () =>
       scrollPositions.set(location.key, window.scrollY);
-    };
-  }, [location.pathname, location.key, navigationType]);
+    window.addEventListener("scroll", savePosition, { passive: true });
+    return () => window.removeEventListener("scroll", savePosition);
+  }, [location.pathname, location.hash, location.key, navigationType]);
   return (
-    <motion.main
-      ref={ref}
-      id="main"
-      tabIndex={-1}
-      className={className}
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: motionOff ? 0 : 0.38, ease }}
-    >
+    <main ref={ref} id="main" tabIndex={-1} className={className}>
       {children}
-    </motion.main>
+    </main>
   );
 }
 
@@ -319,7 +234,6 @@ function Footer({
         {profile.name}
         <span>↗</span>
       </Link>
-      <span className="mono">PROJECTS, PICTURES & PASSING THOUGHTS.</span>
       <button
         className="mono motion-toggle"
         aria-pressed={motionOff}
@@ -338,34 +252,19 @@ function Footer({
   );
 }
 
-function ProjectIndex({ standalone = false }: { standalone?: boolean }) {
+function ProjectIndex() {
   const motionOff = useContext(MotionPreference);
-  const Heading = standalone ? "h1" : "h2";
   const [active, setActive] = useState(0);
   const project = projects[active];
   return (
     <section
-      className={`project-section ${standalone ? "standalone" : ""}`}
-      id="selected-projects"
+      className="project-section"
+      id="projects"
       style={{ "--project-accent": project.accent } as CSSProperties}
     >
-      <div className="section-label mono">
-        <span>01 / SELECTED PROJECTS</span>
-        <span>FOUR IDEAS, TAKING SHAPE.</span>
-      </div>
       <div className="project-layout">
         <div className="project-aside">
-          <Heading>
-            {standalone ? (
-              "Projects"
-            ) : (
-              <>
-                Things
-                <br />
-                I’m building<span className="accent">.</span>
-              </>
-            )}
-          </Heading>
+          <h2>Projects</h2>
           <div className="project-orbit">
             <motion.div
               animate={{ rotate: active * 45 }}
@@ -375,24 +274,11 @@ function ProjectIndex({ standalone = false }: { standalone?: boolean }) {
             </motion.div>
             <span className="orbit-number">{project.index}</span>
           </div>
-          <div className="project-preview-note mono">
-            <span>PROJECT INDEX / {project.index}</span>
-            <span>
-              {project.images.length ? "PROJECT MATERIAL" : "VISUALS TO COME"}
-            </span>
-          </div>
         </div>
         <div className="project-list">
           {projects.map((p, i) => (
-            <AnimatedLink
+            <Link
               key={p.slug}
-              initial={motionOff ? false : { opacity: 0, x: 45 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{
-                duration: motionOff ? 0 : 0.7,
-                ease: [0.22, 1, 0.36, 1],
-              }}
               className={`project-row ${active === i ? "is-active" : ""}`}
               to={`/projects/${p.slug}`}
               onMouseEnter={() => setActive(i)}
@@ -414,42 +300,58 @@ function ProjectIndex({ standalone = false }: { standalone?: boolean }) {
               <span className="project-row-bottom mono">
                 EXPLORE PROJECT <span>+</span>
               </span>
-            </AnimatedLink>
+            </Link>
           ))}
         </div>
       </div>
-      {!standalone && (
-        <Link className="text-link mono" to="/projects">
-          THE PROJECT INDEX <Arrow />
-        </Link>
-      )}
     </section>
   );
 }
 
-function Home({ motionOff }: { motionOff: boolean }) {
+function Home({ motionOff, ready }: { motionOff: boolean; ready: boolean }) {
   return (
     <Page className="home-page">
-      <Landing motionOff={motionOff} />
+      <Landing motionOff={motionOff} ready={ready} />
+      <section className="quick-intro" id="about" aria-label="Introduction">
+        <p>{profile.intro}</p>
+        <Link className="text-link" to="/about">
+          More about me <Arrow />
+        </Link>
+      </section>
+      <ProjectIndex />
+      <Gallery embedded />
+      <Thoughts embedded />
+      <Contact embedded />
     </Page>
+  );
+}
+
+function ContentSection({
+  embedded,
+  id,
+  className,
+  children,
+}: {
+  embedded: boolean;
+  id: string;
+  className: string;
+  children: ReactNode;
+}) {
+  return embedded ? (
+    <section id={id} className={className} aria-label={id}>
+      {children}
+    </section>
+  ) : (
+    <Page className={className}>{children}</Page>
   );
 }
 
 function About({ motionOff }: { motionOff: boolean }) {
   return (
     <Page className="about-page">
-      <div className="page-kicker mono">
-        <span>ABOUT / THE PERSON</span>
-        <span>JOHN DING</span>
-      </div>
       <div className="about-heading">
-        <h1>
-          A little
-          <br />
-          <em>about me.</em>
-        </h1>
+        <h1>About</h1>
         <div className="about-intro">
-          <span className="mono">HELLO, I'M {profile.name.toUpperCase()}.</span>
           <p>{profile.intro}</p>
           {profile.introIsDraft && (
             <span className="draft-label mono">INTRODUCTION / DRAFT COPY</span>
@@ -460,58 +362,37 @@ function About({ motionOff }: { motionOff: boolean }) {
         <div>
           <MathField motionOff={motionOff} />
         </div>
-        <span className="mono">A SMALL STUDY IN CONTINUOUS CURIOSITY.</span>
       </div>
       <div className="about-paths">
         <Link to="/projects">
-          <span className="mono">01 / BUILD</span>
-          <h2>Thinking in systems. ↗</h2>
+          <h2>Projects ↗</h2>
           <p>
             Eidolon, Eidolon Atlas, Cubic, and Projector. Four projects, each
             with space for its own story.
           </p>
         </Link>
         <Link to="/gallery">
-          <span className="mono">02 / OBSERVE</span>
-          <h2>Looking a little closer. ↗</h2>
+          <h2>Gallery ↗</h2>
           <p>
             A collection for my photography. Original photographs will be added
             here.
           </p>
         </Link>
         <Link to="/thoughts">
-          <span className="mono">03 / QUESTION</span>
-          <h2>Leaving room to wonder. ↗</h2>
+          <h2>Thoughts ↗</h2>
           <p>A notebook for thoughts, questions, and answers.</p>
         </Link>
       </div>
     </Page>
   );
 }
-function Placeholder({
-  index = "01",
-  label = "PROJECT VISUAL",
-  className = "",
-}: {
-  index?: string;
-  label?: string;
-  className?: string;
-}) {
+function Placeholder() {
   return (
-    <div className={`visual-placeholder ${className}`}>
-      <div className="placeholder-top mono">
-        <span>
-          {label} / {index}
-        </span>
-        <span>ASSET PLACEHOLDER</span>
-      </div>
+    <div className="visual-placeholder">
       <span className="placeholder-cross" aria-hidden="true">
         +
       </span>
-      <p>Space for the real thing.</p>
-      <span className="mono placeholder-bottom">
-        SCREENSHOT OR PROJECT IMAGE TO BE ADDED
-      </span>
+      <p>Project image to be added.</p>
     </div>
   );
 }
@@ -529,12 +410,6 @@ function ProjectDetail({ slug }: { slug: string }) {
         <Link to="/projects" className="back-link mono">
           ← ALL PROJECTS
         </Link>
-        <div className="detail-kicker mono">
-          <span>PROJECT / {project.index}</span>
-          <span>
-            {project.description ? "PROJECT NOTES" : "CONTENT IN PREPARATION"}
-          </span>
-        </div>
         <h1>
           {project.title}
           <span>↗</span>
@@ -555,9 +430,8 @@ function ProjectDetail({ slug }: { slug: string }) {
           <Placeholder />
         )}
         <div className="project-context">
-          <span className="mono">01 / THE CONTEXT</span>
           <div>
-            <h2>A closer look.</h2>
+            <h2>Context</h2>
             <p>
               {project.context ||
                 "The story behind this project will go here: what prompted it, what it explores, and how it took shape."}
@@ -568,7 +442,6 @@ function ProjectDetail({ slug }: { slug: string }) {
           </div>
         </div>
         <div className="project-context">
-          <span className="mono">02 / UNDER THE SURFACE</span>
           <div>
             <h2>Technical notes.</h2>
             {project.technicalDetails.length ? (
@@ -615,7 +488,8 @@ function ProjectDetail({ slug }: { slug: string }) {
   );
 }
 
-function Gallery() {
+function Gallery({ embedded = false }: { embedded?: boolean }) {
+  const Heading = embedded ? "h2" : "h1";
   const [selected, setSelected] = useState<number | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -624,23 +498,9 @@ function Gallery() {
   }, [selected]);
   const photo = selected !== null ? photography[selected] : null;
   return (
-    <Page className="gallery-page">
-      <div className="page-kicker mono">
-        <span>02 / PHOTOGRAPHY</span>
-        <span>{String(photography.length).padStart(2, "0")} PHOTOGRAPHS</span>
-      </div>
+    <ContentSection embedded={embedded} id="gallery" className="gallery-page">
       <div className="gallery-heading">
-        <h1>
-          Looking.
-          <br />
-          <em>Again.</em>
-        </h1>
-        <p>
-          A place for photographs.
-          <br />
-          For the things worth
-          <br />a second look.
-        </p>
+        <Heading>Gallery</Heading>
       </div>
       {photography.length ? (
         <div className="photo-collection">
@@ -672,23 +532,10 @@ function Gallery() {
             <Aperture petals={12} />
           </div>
           <div className="empty-gallery-copy">
-            <span className="mono">THE COLLECTION BEGINS HERE</span>
-            <h2>
-              Nothing on the walls.
-              <br />
-              <em>Not yet.</em>
-            </h2>
             <p>Original photography will be added here.</p>
           </div>
-          <span className="empty-frame-label mono">
-            FRAME 001 / AWAITING PHOTOGRAPH
-          </span>
         </div>
       )}
-      <div className="gallery-foot mono">
-        <span>AN OPEN COLLECTION</span>
-        <span>JOHN / PHOTOGRAPHY</span>
-      </div>
       <dialog
         ref={dialog}
         className="photo-dialog"
@@ -735,23 +582,16 @@ function Gallery() {
           </button>
         </div>
       </dialog>
-    </Page>
+    </ContentSection>
   );
 }
 
-function Thoughts() {
+function Thoughts({ embedded = false }: { embedded?: boolean }) {
+  const Heading = embedded ? "h2" : "h1";
   return (
-    <Page className="thoughts-page">
-      <div className="page-kicker mono">
-        <span>03 / A NOTEBOOK</span>
-        <span>THOUGHTS, QUESTIONS & ANSWERS</span>
-      </div>
+    <ContentSection embedded={embedded} id="thoughts" className="thoughts-page">
       <div className="thoughts-heading">
-        <h1>
-          Thinking
-          <br />
-          <em>out loud.</em>
-        </h1>
+        <Heading>Thoughts</Heading>
         <span aria-hidden="true">✳</span>
       </div>
       <div className="thought-index">
@@ -771,12 +611,7 @@ function Thoughts() {
           </Link>
         ))}
       </div>
-      <p className="notebook-foot">
-        Room for a sentence.
-        <br />
-        Or a much longer conversation.
-      </p>
-    </Page>
+    </ContentSection>
   );
 }
 
@@ -826,29 +661,15 @@ function ThoughtDetail({ slug }: { slug: string }) {
   );
 }
 
-function Contact() {
+function Contact({ embedded = false }: { embedded?: boolean }) {
+  const Heading = embedded ? "h2" : "h1";
   return (
-    <Page className="contact-page">
-      <div className="page-kicker mono">
-        <span>04 / CONTACT</span>
-        <span>EVERYTHING STARTS WITH A HELLO.</span>
-      </div>
+    <ContentSection embedded={embedded} id="contact" className="contact-page">
       <div className="contact-heading">
-        <h1>
-          Say
-          <br />
-          <em>hello.</em>
-        </h1>
+        <Heading>Contact</Heading>
         <Aperture petals={20} />
       </div>
       <div className="contact-bottom">
-        <p>
-          A thought, a question,
-          <br />
-          or just a hello.
-          <br />
-          <span>Find me here.</span>
-        </p>
         <div className="contact-list">
           {contacts.map((contact) => (
             <div className="contact-row" key={contact.label}>
@@ -871,7 +692,7 @@ function Contact() {
           ))}
         </div>
       </div>
-    </Page>
+    </ContentSection>
   );
 }
 
@@ -896,12 +717,13 @@ export default function App() {
   const prefersReducedMotion = useReducedMotion();
   const [manualMotionOff, setManualMotionOff] = useState(false);
   const motionOff = !!prefersReducedMotion || manualMotionOff;
-  const [menu, setMenu] = useState(false);
   const [intro, setIntro] = useState(() => {
     try {
       return (
+        location.pathname === "/" &&
+        !location.hash &&
         !window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
-        !sessionStorage.getItem("john-intro-seen-v2")
+        !sessionStorage.getItem("john-intro-seen-v3")
       );
     } catch {
       return false;
@@ -910,7 +732,7 @@ export default function App() {
   const finishIntro = useRef(() => {
     setIntro(false);
     try {
-      sessionStorage.setItem("john-intro-seen-v2", "true");
+      sessionStorage.setItem("john-intro-seen-v3", "true");
     } catch {
       /* Browsing remains usable without storage. */
     }
@@ -938,44 +760,54 @@ export default function App() {
         <a className="skip-link" href="#main">
           Skip to content
         </a>
-        <div inert={intro || undefined}>
-          <Header menu={menu} setMenu={setMenu} />
-          <div inert={menu || undefined}>
-            <AnimatePresence mode="wait" initial={false}>
-              <Routes location={location} key={location.pathname}>
-                <Route path="/" element={<Home motionOff={motionOff} />} />
+        <div className="ambient-background" aria-hidden="true">
+          <MathField variant="code" motionOff={motionOff} contours={intro} />
+        </div>
+        <div
+          className="site-shell"
+          data-intro={intro}
+          inert={intro || undefined}
+        >
+          <Header />
+          <div>
+            <Routes location={location}>
+              <Route
+                path="/"
+                element={<Home motionOff={motionOff} ready={!intro} />}
+              />
+              <Route path="/about" element={<About motionOff={motionOff} />} />
+              <Route
+                path="/projects"
+                element={<Navigate to="/#projects" replace />}
+              />
+              {projects.map((p) => (
                 <Route
-                  path="/about"
-                  element={<About motionOff={motionOff} />}
+                  key={p.slug}
+                  path={`/projects/${p.slug}`}
+                  element={<ProjectDetail slug={p.slug} />}
                 />
+              ))}
+              <Route
+                path="/gallery"
+                element={<Navigate to="/#gallery" replace />}
+              />
+              <Route
+                path="/thoughts"
+                element={<Navigate to="/#thoughts" replace />}
+              />
+              {thoughts.map((t) => (
                 <Route
-                  path="/projects"
-                  element={
-                    <Page className="projects-page">
-                      <ProjectIndex standalone />
-                    </Page>
-                  }
+                  key={t.slug}
+                  path={`/thoughts/${t.slug}`}
+                  element={<ThoughtDetail slug={t.slug} />}
                 />
-                {projects.map((p) => (
-                  <Route
-                    key={p.slug}
-                    path={`/projects/${p.slug}`}
-                    element={<ProjectDetail slug={p.slug} />}
-                  />
-                ))}
-                <Route path="/gallery" element={<Gallery />} />
-                <Route path="/thoughts" element={<Thoughts />} />
-                {thoughts.map((t) => (
-                  <Route
-                    key={t.slug}
-                    path={`/thoughts/${t.slug}`}
-                    element={<ThoughtDetail slug={t.slug} />}
-                  />
-                ))}
-                <Route path="/contact" element={<Contact />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AnimatePresence>
+              ))}
+              <Route
+                path="/contact"
+                element={<Navigate to="/#contact" replace />}
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
             <Footer
               motionOff={motionOff}
               systemReduced={!!prefersReducedMotion}
@@ -987,16 +819,6 @@ export default function App() {
           {intro && <Intro done={finishIntro} />}
         </AnimatePresence>
         <CursorMark motionOff={motionOff || intro} />
-        {!motionOff && (
-          <motion.div
-            key={location.pathname}
-            className="route-shutter"
-            aria-hidden="true"
-            initial={{ scaleY: 1 }}
-            animate={{ scaleY: 0 }}
-            transition={{ duration: 0.7, delay: 0.08, ease }}
-          />
-        )}
       </MotionConfig>
     </MotionPreference.Provider>
   );
