@@ -6,6 +6,7 @@ import {
   type MotionValue,
 } from "motion/react";
 import MathField from "./MathField";
+import ScrambleText from "./ScrambleText";
 import { profile } from "../content";
 import "./landing.css";
 
@@ -50,7 +51,9 @@ function RoleLine({
 
   return (
     <div className="landing-role-mask">
-      <motion.p style={motionOff ? undefined : { y, opacity: amount }}>
+      <motion.p
+        style={motionOff ? { y: 0, opacity: 1 } : { y, opacity: amount }}
+      >
         {children}
       </motion.p>
     </div>
@@ -81,6 +84,7 @@ export default function Landing({
     <section
       ref={section}
       id="home"
+      data-scroll-snap
       className={`math-landing${motionOff ? " is-still" : ""}`}
     >
       <div className="landing-stage">
@@ -176,7 +180,8 @@ export default function Landing({
             onClick={() => setFigureIndex((value) => value + 1)}
             aria-label={`Show next figure: ${nextFigure.label.toLowerCase()}`}
           >
-            Next fig <span aria-hidden="true">→</span>
+            <ScrambleText text="Next fig" motionOff={motionOff} />{" "}
+            <span aria-hidden="true">→</span>
           </button>
         </motion.div>
       </div>
