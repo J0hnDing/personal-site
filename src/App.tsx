@@ -25,6 +25,9 @@ import { contacts, photography, profile, projects, thoughts } from "./content";
 import Landing from "./components/Landing";
 import MathField from "./components/MathField";
 import CursorMark from "./components/CursorMark";
+import ScrambleText from "./components/ScrambleText";
+import SmoothScroll from "./components/SmoothScroll";
+import { scrollPageTo } from "./components/scrollController";
 import { useTextReveals } from "./components/useTextReveals";
 
 const ease = [0.76, 0, 0.24, 1] as const;
@@ -96,6 +99,7 @@ function Aperture({
 }
 
 function Intro({ done }: { done: () => void }) {
+  const motionOff = useContext(MotionPreference);
   const [index, setIndex] = useState(0);
   useEffect(() => {
     let elapsed = 0;
@@ -124,7 +128,9 @@ function Intro({ done }: { done: () => void }) {
       transition={{ duration: 0.85, ease }}
     >
       <div className="intro-top mono">
-        <button onClick={done}>Skip intro ↗</button>
+        <button onClick={done}>
+          <ScrambleText text="Skip intro" motionOff={motionOff} /> ↗
+        </button>
       </div>
       <motion.div
         className="intro-greeting"
@@ -142,6 +148,7 @@ function Intro({ done }: { done: () => void }) {
 }
 
 function Header() {
+  const motionOff = useContext(MotionPreference);
   const location = useLocation();
   return (
     <header className="site-header">
@@ -157,7 +164,7 @@ function Header() {
                 : undefined
             }
           >
-            {label}
+            <ScrambleText text={label} motionOff={motionOff} />
           </Link>
         ))}
       </nav>
@@ -182,15 +189,8 @@ function Page({
     const target =
       location.hash && document.getElementById(location.hash.slice(1));
     if (target && !(navigationType === "POP" && saved !== undefined)) {
-      target.scrollIntoView({
-        behavior: motionOff ? "instant" : "smooth",
-        block: "start",
-      });
-    } else
-      window.scrollTo({
-        top: navigationType === "POP" ? saved || 0 : 0,
-        behavior: "instant",
-      });
+      scrollPageTo(target, motionOff);
+    } else scrollPageTo(navigationType === "POP" ? saved || 0 : 0, true);
     if (target) {
       target.setAttribute("tabindex", "-1");
       target.focus({ preventScroll: true });
@@ -231,7 +231,7 @@ function Footer({
   return (
     <footer className="site-footer">
       <Link className="footer-name" to="/">
-        {profile.name}
+        <ScrambleText text={profile.name} motionOff={motionOff} />
         <span>↗</span>
       </Link>
       <button
@@ -245,7 +245,10 @@ function Footer({
         }
         onClick={toggleMotion}
       >
-        Motion {motionOff ? "off" : "on"}{" "}
+        <ScrambleText
+          text={`Motion ${motionOff ? "off" : "on"}`}
+          motionOff={motionOff}
+        />{" "}
         <span aria-hidden="true">{motionOff ? "○" : "●"}</span>
       </button>
     </footer>
@@ -260,6 +263,7 @@ function ProjectIndex() {
     <section
       className="project-section"
       id="projects"
+      data-scroll-snap
       style={{ "--project-accent": project.accent } as CSSProperties}
     >
       <div className="project-layout">
@@ -294,11 +298,14 @@ function ProjectIndex() {
                 </span>
               </div>
               <div className="project-row-title">
-                <h3>{p.title}</h3>
+                <h3>
+                  <ScrambleText text={p.title} motionOff={motionOff} />
+                </h3>
                 <Arrow />
               </div>
               <span className="project-row-bottom mono">
-                EXPLORE PROJECT <span>+</span>
+                <ScrambleText text="EXPLORE PROJECT" motionOff={motionOff} />{" "}
+                <span>+</span>
               </span>
             </Link>
           ))}
@@ -312,10 +319,15 @@ function Home({ motionOff, ready }: { motionOff: boolean; ready: boolean }) {
   return (
     <Page className="home-page">
       <Landing motionOff={motionOff} ready={ready} />
-      <section className="quick-intro" id="about" aria-label="Introduction">
+      <section
+        className="quick-intro"
+        id="about"
+        data-scroll-snap
+        aria-label="Introduction"
+      >
         <p>{profile.intro}</p>
         <Link className="text-link" to="/about">
-          More about me <Arrow />
+          <ScrambleText text="More about me" motionOff={motionOff} /> <Arrow />
         </Link>
       </section>
       <ProjectIndex />
@@ -338,7 +350,7 @@ function ContentSection({
   children: ReactNode;
 }) {
   return embedded ? (
-    <section id={id} className={className} aria-label={id}>
+    <section id={id} className={className} data-scroll-snap aria-label={id}>
       {children}
     </section>
   ) : (
@@ -398,6 +410,7 @@ function Placeholder() {
 }
 
 function ProjectDetail({ slug }: { slug: string }) {
+  const motionOff = useContext(MotionPreference);
   const project = projects.find((p) => p.slug === slug);
   if (!project) return <NotFound />;
   const next = projects[(projects.indexOf(project) + 1) % projects.length];
@@ -408,7 +421,7 @@ function ProjectDetail({ slug }: { slug: string }) {
         style={{ "--detail-accent": project.accent } as CSSProperties}
       >
         <Link to="/projects" className="back-link mono">
-          ← ALL PROJECTS
+          ← <ScrambleText text="ALL PROJECTS" motionOff={motionOff} />
         </Link>
         <h1>
           {project.title}
@@ -471,7 +484,8 @@ function ProjectDetail({ slug }: { slug: string }) {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    {link.label} <Arrow />
+                    <ScrambleText text={link.label} motionOff={motionOff} />{" "}
+                    <Arrow />
                   </a>
                 ))}
               </div>
@@ -480,8 +494,15 @@ function ProjectDetail({ slug }: { slug: string }) {
         </div>
       </div>
       <Link to={`/projects/${next.slug}`} className="next-project">
-        <span className="mono">NEXT PROJECT / {next.index}</span>
-        <span>{next.title}</span>
+        <span className="mono">
+          <ScrambleText
+            text={`NEXT PROJECT / ${next.index}`}
+            motionOff={motionOff}
+          />
+        </span>
+        <span>
+          <ScrambleText text={next.title} motionOff={motionOff} />
+        </span>
         <Arrow />
       </Link>
     </Page>
@@ -489,6 +510,7 @@ function ProjectDetail({ slug }: { slug: string }) {
 }
 
 function Gallery({ embedded = false }: { embedded?: boolean }) {
+  const motionOff = useContext(MotionPreference);
   const Heading = embedded ? "h2" : "h1";
   const [selected, setSelected] = useState<number | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -518,7 +540,9 @@ function Gallery({ embedded = false }: { embedded?: boolean }) {
                 height={p.height}
                 loading="lazy"
               />
-              <span className="mono">{p.title} ↗</span>
+              <span className="mono">
+                <ScrambleText text={p.title} motionOff={motionOff} /> ↗
+              </span>
             </button>
           ))}
         </div>
@@ -550,7 +574,7 @@ function Gallery({ embedded = false }: { embedded?: boolean }) {
           className="dialog-close mono"
           onClick={() => setSelected(null)}
         >
-          Close ×
+          <ScrambleText text="Close" motionOff={motionOff} /> ×
         </button>
         {photo && (
           <figure>
@@ -568,7 +592,7 @@ function Gallery({ embedded = false }: { embedded?: boolean }) {
               setSelected((i) => (i === null ? null : Math.max(0, i - 1)))
             }
           >
-            ← Previous
+            ← <ScrambleText text="Previous" motionOff={motionOff} />
           </button>
           <button
             disabled={selected === photography.length - 1}
@@ -578,7 +602,7 @@ function Gallery({ embedded = false }: { embedded?: boolean }) {
               )
             }
           >
-            Next →
+            <ScrambleText text="Next" motionOff={motionOff} /> →
           </button>
         </div>
       </dialog>
@@ -587,6 +611,7 @@ function Gallery({ embedded = false }: { embedded?: boolean }) {
 }
 
 function Thoughts({ embedded = false }: { embedded?: boolean }) {
+  const motionOff = useContext(MotionPreference);
   const Heading = embedded ? "h2" : "h1";
   return (
     <ContentSection embedded={embedded} id="thoughts" className="thoughts-page">
@@ -604,7 +629,9 @@ function Thoughts({ embedded = false }: { embedded?: boolean }) {
                   ? "SAMPLE / LAYOUT DEMONSTRATION"
                   : thought.kind}
               </span>
-              <h2>{thought.title}</h2>
+              <h2>
+                <ScrambleText text={thought.title} motionOff={motionOff} />
+              </h2>
               <p>{thought.excerpt}</p>
             </div>
             <Arrow />
@@ -616,12 +643,13 @@ function Thoughts({ embedded = false }: { embedded?: boolean }) {
 }
 
 function ThoughtDetail({ slug }: { slug: string }) {
+  const motionOff = useContext(MotionPreference);
   const thought = thoughts.find((t) => t.slug === slug);
   if (!thought) return <NotFound />;
   return (
     <Page className="thought-detail">
       <Link to="/thoughts" className="back-link mono">
-        ← THE NOTEBOOK
+        ← <ScrambleText text="THE NOTEBOOK" motionOff={motionOff} />
       </Link>
       <article>
         <header>
@@ -653,7 +681,7 @@ function ThoughtDetail({ slug }: { slug: string }) {
         <div className="article-end">
           <span aria-hidden="true">✳</span>
           <Link to="/thoughts" className="mono">
-            BACK TO THOUGHTS ↗
+            <ScrambleText text="BACK TO THOUGHTS" motionOff={motionOff} /> ↗
           </Link>
         </div>
       </article>
@@ -662,6 +690,7 @@ function ThoughtDetail({ slug }: { slug: string }) {
 }
 
 function Contact({ embedded = false }: { embedded?: boolean }) {
+  const motionOff = useContext(MotionPreference);
   const Heading = embedded ? "h2" : "h1";
   return (
     <ContentSection embedded={embedded} id="contact" className="contact-page">
@@ -680,7 +709,11 @@ function Contact({ embedded = false }: { embedded?: boolean }) {
                   target={contact.label === "Email" ? undefined : "_blank"}
                   rel="noreferrer"
                 >
-                  {contact.value || "Connect"} <Arrow />
+                  <ScrambleText
+                    text={contact.value || "Connect"}
+                    motionOff={motionOff}
+                  />{" "}
+                  <Arrow />
                 </a>
               ) : (
                 <span className="contact-placeholder mono">
@@ -697,6 +730,7 @@ function Contact({ embedded = false }: { embedded?: boolean }) {
 }
 
 function NotFound() {
+  const motionOff = useContext(MotionPreference);
   return (
     <Page className="not-found">
       <span className="mono">404 / A SMALL DETOUR</span>
@@ -706,7 +740,8 @@ function NotFound() {
         <em>here.</em>
       </h1>
       <Link className="text-link" to="/">
-        Back to familiar ground <Arrow />
+        <ScrambleText text="Back to familiar ground" motionOff={motionOff} />{" "}
+        <Arrow />
       </Link>
     </Page>
   );
@@ -757,6 +792,7 @@ export default function App() {
         reducedMotion={motionOff ? "always" : "never"}
         transition={motionOff ? { duration: 0 } : undefined}
       >
+        <SmoothScroll disabled={motionOff || intro} />
         <a className="skip-link" href="#main">
           Skip to content
         </a>

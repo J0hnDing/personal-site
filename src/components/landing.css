@@ -28,50 +28,63 @@
 .landing-identity {
   position: absolute;
   z-index: 2;
-  top: clamp(100px, 18svh, 165px);
-  left: var(--gutter);
-  width: 58%;
+  top: clamp(130px, 23svh, 240px);
+  left: calc(var(--gutter) + 2vw);
+  width: 46%;
   pointer-events: none;
 }
 .landing-name-mask {
   overflow: hidden;
-  padding: 0.08em 0;
+  padding: 0.12em 0;
 }
 .landing-name {
   font-family: "Space Grotesk Variable", Arial, sans-serif;
-  font-size: clamp(5rem, min(15.4vw, 22svh), 18rem);
+  font-size: clamp(4.5rem, min(12vw, 18svh), 14rem);
   font-weight: 500;
-  line-height: 0.8;
-  letter-spacing: -0.08em;
+  line-height: 0.86;
+  letter-spacing: -0.075em;
 }
 .landing-name > span {
   display: block;
   width: max-content;
 }
 .landing-name .surname {
-  margin-left: 7vw;
-  margin-top: 15px;
+  margin-left: 3.6vw;
+  margin-top: 0.06em;
   color: #b9c7bf;
 }
 .name-period {
   color: #9993b3;
 }
 .landing-roles {
-  margin-top: clamp(24px, 4svh, 40px);
-  margin-left: 7vw;
+  display: grid;
+  gap: clamp(14px, 2.1svh, 24px);
+  margin-top: clamp(28px, 5svh, 52px);
+  margin-left: 3.6vw;
   color: #b9c7bf;
 }
 .landing-role-mask {
   overflow: hidden;
-  padding: 0.08em 0;
+  padding: 0.12em 0.2em;
+}
+.landing-role-mask:nth-child(2) {
+  margin-left: 3vw;
+}
+.landing-role-mask:nth-child(3) {
+  margin-left: 0.8vw;
+}
+.landing-role-mask:nth-child(4) {
+  margin-left: 6vw;
 }
 .landing-role-mask p {
   width: max-content;
   max-width: 100%;
-  font: inherit;
-  font-size: clamp(1.15rem, 2.2vw, 2rem);
-  line-height: 1.2;
-  letter-spacing: -0.035em;
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1.2rem, 2.1vw, 1.8rem);
+  line-height: 1.25;
+  letter-spacing: -0.025em;
 }
 
 .landing-figure-control {
@@ -129,10 +142,6 @@
 .math-landing.is-still .landing-stage {
   position: relative;
   min-height: 100svh;
-}
-
-.math-landing.is-still .landing-roles {
-  margin-top: clamp(1.25rem, 3svh, 2.5rem);
 }
 
 .about-page {
@@ -241,6 +250,27 @@
   color: #b6b0c7;
 }
 
+@media (min-width: 1280px) {
+  .landing-identity {
+    left: calc(var(--gutter) + 10vw);
+  }
+  .landing-name .surname {
+    margin-left: 5vw;
+  }
+  .landing-roles {
+    margin-left: 2vw;
+  }
+  .landing-role-mask:nth-child(2) {
+    margin-left: 12vw;
+  }
+  .landing-role-mask:nth-child(3) {
+    margin-left: 6vw;
+  }
+  .landing-role-mask:nth-child(4) {
+    margin-left: 24vw;
+  }
+}
+
 @media (max-width: 1100px) {
   .landing-field {
     right: -12vw;
@@ -257,22 +287,33 @@
     height: 320svh;
   }
   .landing-identity {
-    top: 110px;
+    top: 116px;
+    left: var(--gutter);
     width: calc(100% - 2 * var(--gutter));
   }
   .landing-name {
-    font-size: min(25vw, 18svh);
+    font-size: min(23vw, 13svh);
   }
   .landing-name .surname {
-    margin-left: 12vw;
-    margin-top: 12px;
+    margin-left: 8vw;
+    margin-top: 0.06em;
   }
   .landing-roles {
-    margin-left: 12vw;
-    margin-top: 28px;
+    margin-left: 5vw;
+    margin-top: 24px;
+    gap: 12px;
+  }
+  .landing-role-mask:nth-child(2) {
+    margin-left: 5vw;
+  }
+  .landing-role-mask:nth-child(3) {
+    margin-left: 1vw;
+  }
+  .landing-role-mask:nth-child(4) {
+    margin-left: 10vw;
   }
   .landing-role-mask p {
-    font-size: clamp(1.05rem, 4.8vw, 1.5rem);
+    font-size: clamp(1.1rem, 4.8vw, 1.5rem);
   }
   .landing-field {
     top: 64%;
@@ -326,10 +367,11 @@
     top: 85px;
   }
   .landing-name {
-    font-size: min(20vw, 20svh);
+    font-size: min(12vw, 16svh);
   }
   .landing-roles {
-    margin-top: 20px;
+    margin-top: 18px;
+    gap: 8px;
   }
   .landing-role-mask p {
     font-size: 1rem;

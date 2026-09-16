@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /** The accessible label stays stable while its visual counterpart decodes. */
 export default function ScrambleText({
@@ -8,15 +8,16 @@ export default function ScrambleText({
   text: string;
   motionOff?: boolean;
 }) {
+  const root = useRef<HTMLSpanElement>(null);
   const [display, setDisplay] = useState(text);
   const timer = useRef(0);
-  const stop = () => window.clearInterval(timer.current);
+  const stop = useCallback(() => window.clearInterval(timer.current), []);
   useEffect(() => {
     stop();
     setDisplay(text);
     return stop;
   }, [text, motionOff]);
-  const play = () => {
+  const play = useCallback(() => {
     if (motionOff) return;
     stop();
     let frame = 0;
@@ -27,7 +28,7 @@ export default function ScrambleText({
         Array.from(text, (character, i) =>
           character === " " || i < frame / 1.4
             ? character
-            : symbols[(i * 7 + frame * 3) % symbols.length],
+            : symbols[Math.floor(Math.random() * symbols.length)],
         ).join(""),
       );
       if (frame > text.length * 1.4) {
@@ -35,9 +36,20 @@ export default function ScrambleText({
         setDisplay(text);
       }
     }, 28);
-  };
+  }, [motionOff, stop, text]);
+  useEffect(() => {
+    const element = root.current;
+    const control = element?.closest<HTMLElement>("a, button");
+    if (!control) return;
+    control.addEventListener("pointerenter", play);
+    control.addEventListener("focus", play);
+    return () => {
+      control.removeEventListener("pointerenter", play);
+      control.removeEventListener("focus", play);
+    };
+  }, [play]);
   return (
-    <span className="scramble-text" onMouseEnter={play} aria-label={text}>
+    <span ref={root} className="scramble-text" aria-label={text}>
       <span className="scramble-sizer" aria-hidden="true">
         {text}
       </span>

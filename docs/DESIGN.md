@@ -17,7 +17,7 @@ The recurring aperture joins three activities without pretending to be a product
 
 Graphite supports silver type, muted sage, and dusty violet. The palette keeps color without a bright dominant surface. The gallery uses a subdued lavender, and writing retains a calm light surface. Space Grotesk carries structural typography, Georgia provides an italic counterpoint, and DM Mono marks indexes and computational annotations. Fonts are served locally.
 
-The landing presents a large, subtly stacked sans-serif name above four role lines. Five unboxed navigation words link to Home, Projects, Gallery, Thoughts, and Contact. About is reached through the quick introduction's “More about me” link. The full project index, gallery, thoughts, and contact content follow on the same page; individual project and thought details remain separate routes.
+The landing presents a stacked sans-serif name with a restrained surname indent and generous space around it. Four italic serif role lines follow with open vertical spacing and alternating horizontal offsets. At desktop widths of 1280px and above, the name sits farther inward and the developer and thinker lines extend toward the center to connect the text composition to the figure. The primary composition is checked at the full 1920px desktop width, with smaller type and offsets for mobile and short landscape screens; the mathematical figure retains its existing placement. Five unboxed navigation words link to Home, Projects, Gallery, Thoughts, and Contact. About is reached through the quick introduction's “More about me” link. The full project index, gallery, thoughts, and contact content follow on the same page; individual project and thought details remain separate routes.
 
 ## Motion
 
