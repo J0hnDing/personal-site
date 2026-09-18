@@ -47,6 +47,10 @@
 .landing-name > span {
   display: block;
   width: max-content;
+  overflow: hidden;
+}
+.landing-name-line > span {
+  display: block;
 }
 .landing-name .surname {
   margin-left: 3.6vw;

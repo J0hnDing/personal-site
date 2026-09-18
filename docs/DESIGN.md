@@ -21,7 +21,7 @@ The landing presents a stacked sans-serif name with a restrained surname indent 
 
 ## Motion
 
-The 21-language greeting sequence fades out instead of moving upward. Its code background stays mounted behind Home, while the mathematical figure fades in and the name rises through a mask. Scrolling reveals A Student, A Software Developer, A Photographer, and A Thinker in that order below the name. The quick introduction follows the hero.
+The nine-greeting sequence fades out instead of moving upward. Its code background stays mounted behind Home, while the mathematical figure fades in and the name rises through a mask. Scrolling reveals A Student, A Software Developer, A Photographer, and A Thinker in that order below the name. The quick introduction follows the hero.
 
 `useTextReveals` applies a shared bottom-up entrance to headings, paragraphs, captions, and relevant links/rows, including content added later. The hero owns its own scroll-driven masks. Navigation stays available as five text links, with no logo, tagline, border, or bar background.
 
