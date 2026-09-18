@@ -93,8 +93,8 @@ export default function Landing({
           initial={motionOff ? false : { opacity: 0 }}
           animate={{ opacity: ready ? 1 : 0 }}
           transition={{
-            duration: motionOff ? 0 : 1.5,
-            delay: motionOff ? 0 : 0.18,
+            duration: motionOff ? 0 : 1.25,
+            delay: motionOff ? 0 : 1.55,
             ease: [0.22, 1, 0.36, 1],
           }}
         >
@@ -108,35 +108,50 @@ export default function Landing({
         <motion.div
           className="landing-identity"
           style={motionOff ? undefined : { y: nameLift }}
-          initial={motionOff ? false : { opacity: 0 }}
-          animate={{ opacity: ready ? 1 : 0 }}
-          transition={{ duration: motionOff ? 0 : 0.35 }}
         >
           <div className="landing-name-mask">
-            <motion.h1
-              className="landing-name"
-              aria-label={profile.name}
-              initial={motionOff ? false : { y: "112%" }}
-              animate={{ y: ready ? "0%" : "112%" }}
-              transition={{
-                duration: motionOff ? 0 : 1.15,
-                delay: motionOff ? 0 : 0.06,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-            >
-              <span aria-hidden="true">{firstName.toUpperCase()}</span>
-              <span className="surname" aria-hidden="true">
-                {surname.join(" ").toUpperCase()}
-                <span className="name-period">.</span>
+            <h1 className="landing-name" aria-label={profile.name}>
+              <span className="landing-name-line">
+                <motion.span
+                  aria-hidden="true"
+                  initial={motionOff ? false : { y: "112%" }}
+                  animate={{ y: ready ? "0%" : "112%" }}
+                  transition={{
+                    duration: motionOff ? 0 : 0.82,
+                    delay: motionOff ? 0 : 0.08,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                >
+                  {firstName.toUpperCase()}
+                </motion.span>
               </span>
-            </motion.h1>
+              <span className="landing-name-line">
+                <motion.span
+                  className="surname"
+                  aria-hidden="true"
+                  initial={motionOff ? false : { y: "112%" }}
+                  animate={{ y: ready ? "0%" : "112%" }}
+                  transition={{
+                    duration: motionOff ? 0 : 0.82,
+                    delay: motionOff ? 0 : 0.72,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                >
+                  {surname.join(" ").toUpperCase()}
+                  <span className="name-period">.</span>
+                </motion.span>
+              </span>
+            </h1>
           </div>
 
           <motion.div
             className="landing-roles"
             initial={false}
             animate={{ opacity: ready ? 1 : 0 }}
-            transition={{ duration: motionOff ? 0 : 0.4 }}
+            transition={{
+              duration: motionOff ? 0 : 0.65,
+              delay: motionOff ? 0 : 1.7,
+            }}
             aria-label="Roles"
           >
             {roles.map((role, index) => {
@@ -160,8 +175,8 @@ export default function Landing({
           initial={motionOff ? false : { opacity: 0 }}
           animate={{ opacity: ready ? 1 : 0 }}
           transition={{
-            duration: motionOff ? 0 : 0.7,
-            delay: motionOff ? 0 : 0.5,
+            duration: motionOff ? 0 : 0.8,
+            delay: motionOff ? 0 : 1.9,
           }}
         >
           <div
