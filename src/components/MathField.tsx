@@ -66,7 +66,7 @@ function drawCodeField(
   const patch = still ? 0 : Math.floor(elapsed * (prominent ? 6.25 : 1.7));
 
   context.save();
-  context.font = `${prominent ? 11 : 9}px "DM Mono", monospace`;
+  context.font = `${prominent ? 11 : 9}px "IBM Plex Mono", monospace`;
   context.textAlign = "center";
   context.textBaseline = "middle";
 

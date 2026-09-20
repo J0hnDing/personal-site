@@ -4,7 +4,7 @@ The editable portfolio content lives in [`src/content.ts`](../src/content.ts). T
 
 ## Profile
 
-`profile` contains the full displayed name, an introduction shared by Home and About, and an `introIsDraft` flag. The current introduction includes John's supplied fourth-year Computer Science and Mathematics studies at the University of Toronto. The name uses its original stacked Space Grotesk treatment on Home. The four role lines are defined in `Landing.tsx`. There is no tagline field.
+`profile` contains the full displayed name, an introduction shared by Home and About, and an `introIsDraft` flag. The current introduction includes John's supplied fourth-year Computer Science and Mathematics studies at the University of Toronto. Home renders `John` and `dinG` in two aligned Major Mono Display lines. The four role lines and their accompanying line icons are defined in `Landing.tsx`. There is no tagline field.
 
 ## Projects
 

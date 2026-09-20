@@ -11,11 +11,48 @@ import { profile } from "../content";
 import "./landing.css";
 
 const roles = [
-  "A Student",
-  "A Software Developer",
-  "A Photographer",
-  "A Thinker",
+  { label: "a student", icon: "book" },
+  { label: "a thinker", icon: "thought" },
+  { label: "a photographer", icon: "camera" },
+  { label: "a software developer", icon: "code" },
 ] as const;
+
+type RoleIconKind = (typeof roles)[number]["icon"];
+
+function RoleIcon({ kind }: { kind: RoleIconKind }) {
+  if (kind === "book") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4.5 5.25h4.25A3.25 3.25 0 0 1 12 8.5v10.25a3.25 3.25 0 0 0-3.25-3.25H4.5V5.25Z" />
+        <path d="M19.5 5.25h-4.25A3.25 3.25 0 0 0 12 8.5v10.25a3.25 3.25 0 0 1 3.25-3.25h4.25V5.25Z" />
+      </svg>
+    );
+  }
+
+  if (kind === "code") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m8.75 7.25-4.5 4.75 4.5 4.75M15.25 7.25l4.5 4.75-4.5 4.75M13.75 4.75l-3.5 14.5" />
+      </svg>
+    );
+  }
+
+  if (kind === "camera") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4.25 8.25h3l1.5-2.5h6.5l1.5 2.5h3v10H4.25v-10Z" />
+        <circle cx="12" cy="13" r="3.25" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6.25 16.25A7 7 0 1 1 18 14.75l1.25 3-3.5-1A7 7 0 0 1 6.25 16.25Z" />
+      <path d="M9 11.75h6M12 8.75v6" />
+    </svg>
+  );
+}
 
 const figures = [
   { label: "FIBERS OF S³", study: "HOPF FIBRATION / S³ → S²" },
@@ -29,18 +66,18 @@ const figures = [
 ] as const;
 
 function RoleLine({
-  children,
+  label,
+  icon,
   progress,
   range,
   motionOff,
 }: {
-  children: string;
+  label: string;
+  icon: RoleIconKind;
   progress: MotionValue<number>;
   range: readonly [number, number];
   motionOff: boolean;
 }) {
-  // Derive both properties from one sampled amount so browser-native scroll
-  // interpolation cannot let opacity run ahead of the masked rise.
   const amount = useTransform(() =>
     Math.max(
       0,
@@ -54,7 +91,8 @@ function RoleLine({
       <motion.p
         style={motionOff ? { y: 0, opacity: 1 } : { y, opacity: amount }}
       >
-        {children}
+        <span>{label}</span>
+        <RoleIcon kind={icon} />
       </motion.p>
     </div>
   );
@@ -68,6 +106,9 @@ export default function Landing({
   ready?: boolean;
 }) {
   const [firstName, ...surname] = profile.name.split(" ");
+  const surnameText = surname.join(" ").toLowerCase();
+  const displayFirstName = `${firstName.charAt(0).toUpperCase()}${firstName.slice(1).toLowerCase()}`;
+  const displaySurname = `${surnameText.slice(0, -1)}${surnameText.slice(-1).toUpperCase()}`;
   const section = useRef<HTMLElement>(null);
   const [figureIndex, setFigureIndex] = useState(0);
   const activeFigureIndex = figureIndex % figures.length;
@@ -78,7 +119,11 @@ export default function Landing({
     target: section,
     offset: ["start start", "end end"],
   });
-  const nameLift = useTransform(scrollYProgress, [0, 0.72], ["0vh", "-5vh"]);
+  const scrollCueOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.08, 0.18],
+    [1, 1, 0],
+  );
 
   return (
     <section
@@ -105,10 +150,7 @@ export default function Landing({
           />
         </motion.div>
 
-        <motion.div
-          className="landing-identity"
-          style={motionOff ? undefined : { y: nameLift }}
-        >
+        <div className="landing-identity">
           <div className="landing-name-mask">
             <h1 className="landing-name" aria-label={profile.name}>
               <span className="landing-name-line">
@@ -122,12 +164,11 @@ export default function Landing({
                     ease: [0.16, 1, 0.3, 1],
                   }}
                 >
-                  {firstName.toUpperCase()}
+                  {displayFirstName}
                 </motion.span>
               </span>
               <span className="landing-name-line">
                 <motion.span
-                  className="surname"
                   aria-hidden="true"
                   initial={motionOff ? false : { y: "112%" }}
                   animate={{ y: ready ? "0%" : "112%" }}
@@ -137,38 +178,28 @@ export default function Landing({
                     ease: [0.16, 1, 0.3, 1],
                   }}
                 >
-                  {surname.join(" ").toUpperCase()}
-                  <span className="name-period">.</span>
+                  {displaySurname}
                 </motion.span>
               </span>
             </h1>
           </div>
 
-          <motion.div
-            className="landing-roles"
-            initial={false}
-            animate={{ opacity: ready ? 1 : 0 }}
-            transition={{
-              duration: motionOff ? 0 : 0.65,
-              delay: motionOff ? 0 : 1.7,
-            }}
-            aria-label="Roles"
-          >
+          <div className="landing-roles" aria-label="Roles">
             {roles.map((role, index) => {
               const start = 0.1 + index * 0.16;
               return (
                 <RoleLine
-                  key={role}
+                  key={role.label}
+                  label={role.label}
+                  icon={role.icon}
                   progress={scrollYProgress}
                   range={[start, start + 0.105]}
                   motionOff={motionOff}
-                >
-                  {role}
-                </RoleLine>
+                />
               );
             })}
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
 
         <motion.div
           className="landing-figure-control mono"
@@ -198,6 +229,14 @@ export default function Landing({
             <ScrambleText text="Next fig" motionOff={motionOff} />{" "}
             <span aria-hidden="true">→</span>
           </button>
+        </motion.div>
+
+        <motion.div
+          className="landing-scroll-cue"
+          style={motionOff ? undefined : { opacity: scrollCueOpacity }}
+          aria-hidden="true"
+        >
+          <span />
         </motion.div>
       </div>
     </section>

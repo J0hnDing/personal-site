@@ -16,7 +16,7 @@ export default function SmoothScroll({ disabled }: { disabled: boolean }) {
       autoRaf: true,
       anchors: true,
       allowNestedScroll: true,
-      lerp: 0.085,
+      lerp: 0.07,
       smoothWheel: true,
       stopInertiaOnNavigate: true,
       syncTouch: false,
@@ -38,7 +38,7 @@ export default function SmoothScroll({ disabled }: { disabled: boolean }) {
 
     const snap = new Snap(lenis, {
       type: "proximity",
-      distanceThreshold: "18%",
+      distanceThreshold: "8%",
       debounce: 240,
       lerp: 0.12,
     });
