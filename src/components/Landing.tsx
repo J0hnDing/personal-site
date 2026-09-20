@@ -17,6 +17,11 @@ const roles = [
   { label: "a software developer", icon: "code" },
 ] as const;
 
+const nameRevealDuration = 1.15;
+const firstNameDelay = 1.35;
+const surnameDelay = 2.55;
+const supportingRevealDelay = surnameDelay + nameRevealDuration + 0.6;
+
 type RoleIconKind = (typeof roles)[number]["icon"];
 
 function RoleIcon({ kind }: { kind: RoleIconKind }) {
@@ -139,7 +144,7 @@ export default function Landing({
           animate={{ opacity: ready ? 1 : 0 }}
           transition={{
             duration: motionOff ? 0 : 1.25,
-            delay: motionOff ? 0 : 1.55,
+            delay: motionOff ? 0 : supportingRevealDelay,
             ease: [0.22, 1, 0.36, 1],
           }}
         >
@@ -159,9 +164,9 @@ export default function Landing({
                   initial={motionOff ? false : { y: "112%" }}
                   animate={{ y: ready ? "0%" : "112%" }}
                   transition={{
-                    duration: motionOff ? 0 : 0.82,
-                    delay: motionOff ? 0 : 0.08,
-                    ease: [0.16, 1, 0.3, 1],
+                    duration: motionOff ? 0 : nameRevealDuration,
+                    delay: motionOff ? 0 : firstNameDelay,
+                    ease: [0.12, 0.95, 0.18, 1],
                   }}
                 >
                   {displayFirstName}
@@ -173,9 +178,9 @@ export default function Landing({
                   initial={motionOff ? false : { y: "112%" }}
                   animate={{ y: ready ? "0%" : "112%" }}
                   transition={{
-                    duration: motionOff ? 0 : 0.82,
-                    delay: motionOff ? 0 : 0.72,
-                    ease: [0.16, 1, 0.3, 1],
+                    duration: motionOff ? 0 : nameRevealDuration,
+                    delay: motionOff ? 0 : surnameDelay,
+                    ease: [0.12, 0.95, 0.18, 1],
                   }}
                 >
                   {displaySurname}
@@ -207,7 +212,7 @@ export default function Landing({
           animate={{ opacity: ready ? 1 : 0 }}
           transition={{
             duration: motionOff ? 0 : 0.8,
-            delay: motionOff ? 0 : 1.9,
+            delay: motionOff ? 0 : supportingRevealDelay,
           }}
         >
           <div
