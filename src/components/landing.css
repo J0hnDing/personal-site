@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "Montserrat";
+  src: url("../../fonts/Montserrat/Montserrat-VariableFont_wght.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 .math-landing {
   position: relative;
   height: 180svh;
@@ -12,6 +20,188 @@
   height: 100svh;
   overflow: hidden;
   background: transparent;
+}
+.landing-points {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.landing-point {
+  position: absolute;
+  left: var(--point-left);
+  top: var(--point-top);
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(198, 207, 201, 0.46);
+  box-shadow: 0 0 8px rgba(198, 207, 201, 0.22);
+  animation: landing-point-float 7s ease-in-out infinite alternate;
+  animation-delay: var(--point-delay);
+}
+.landing-point:nth-child(1) {
+  --point-left: 9%;
+  --point-top: 18%;
+  --point-duration: 11s;
+  --point-delay: -2s;
+  --point-drift-x: 7px;
+  --point-drift-y: -11px;
+}
+.landing-point:nth-child(2) {
+  --point-left: 19%;
+  --point-top: 67%;
+  --point-duration: 9s;
+  --point-delay: -5s;
+  --point-drift-x: -8px;
+  --point-drift-y: -7px;
+}
+.landing-point:nth-child(3) {
+  --point-left: 34%;
+  --point-top: 34%;
+  --point-duration: 13s;
+  --point-delay: -3s;
+  --point-drift-x: 9px;
+  --point-drift-y: 8px;
+}
+.landing-point:nth-child(4) {
+  --point-left: 47%;
+  --point-top: 78%;
+  --point-duration: 10s;
+  --point-delay: -7s;
+  --point-drift-x: -6px;
+  --point-drift-y: -10px;
+}
+.landing-point:nth-child(5) {
+  --point-left: 57%;
+  --point-top: 16%;
+  --point-duration: 12s;
+  --point-delay: -6s;
+  --point-drift-x: 8px;
+  --point-drift-y: 6px;
+}
+.landing-point:nth-child(6) {
+  --point-left: 68%;
+  --point-top: 63%;
+  --point-duration: 8s;
+  --point-delay: -1s;
+  --point-drift-x: -7px;
+  --point-drift-y: -8px;
+}
+.landing-point:nth-child(7) {
+  --point-left: 79%;
+  --point-top: 24%;
+  --point-duration: 14s;
+  --point-delay: -4s;
+  --point-drift-x: 6px;
+  --point-drift-y: 10px;
+}
+.landing-point:nth-child(8) {
+  --point-left: 91%;
+  --point-top: 72%;
+  --point-duration: 10s;
+  --point-delay: -8s;
+  --point-drift-x: -9px;
+  --point-drift-y: 7px;
+}
+.landing-point:nth-child(9) {
+  --point-left: 44%;
+  --point-top: 52%;
+  --point-duration: 11s;
+  --point-delay: -9s;
+  --point-drift-x: 5px;
+  --point-drift-y: -9px;
+}
+.landing-point:nth-child(10) {
+  --point-left: 26%;
+  --point-top: 88%;
+  --point-duration: 13s;
+  --point-delay: -2s;
+  --point-drift-x: -5px;
+  --point-drift-y: 8px;
+}
+.landing-point:nth-child(11) {
+  --point-left: 73%;
+  --point-top: 87%;
+  --point-duration: 9s;
+  --point-delay: -5s;
+  --point-drift-x: 8px;
+  --point-drift-y: -6px;
+}
+.landing-point:nth-child(12) {
+  --point-left: 86%;
+  --point-top: 48%;
+  --point-duration: 12s;
+  --point-delay: -10s;
+  --point-drift-x: -6px;
+  --point-drift-y: 9px;
+}
+.landing-point:nth-child(13) {
+  --point-left: 14%;
+  --point-top: 44%;
+  --point-duration: 10s;
+  --point-delay: -4s;
+  --point-drift-x: 6px;
+  --point-drift-y: -8px;
+}
+.landing-point:nth-child(14) {
+  --point-left: 29%;
+  --point-top: 23%;
+  --point-duration: 12s;
+  --point-delay: -7s;
+  --point-drift-x: -7px;
+  --point-drift-y: 6px;
+}
+.landing-point:nth-child(15) {
+  --point-left: 39%;
+  --point-top: 91%;
+  --point-duration: 9s;
+  --point-delay: -1s;
+  --point-drift-x: 8px;
+  --point-drift-y: -7px;
+}
+.landing-point:nth-child(16) {
+  --point-left: 61%;
+  --point-top: 42%;
+  --point-duration: 14s;
+  --point-delay: -8s;
+  --point-drift-x: -5px;
+  --point-drift-y: 10px;
+}
+.landing-point:nth-child(17) {
+  --point-left: 83%;
+  --point-top: 14%;
+  --point-duration: 11s;
+  --point-delay: -6s;
+  --point-drift-x: 7px;
+  --point-drift-y: 7px;
+}
+.landing-point:nth-child(18) {
+  --point-left: 96%;
+  --point-top: 58%;
+  --point-duration: 13s;
+  --point-delay: -9s;
+  --point-drift-x: -8px;
+  --point-drift-y: -6px;
+}
+@keyframes landing-point-float {
+  0% {
+    opacity: 0.28;
+    transform: translate3d(0, 0, 0) scale(0.8);
+  }
+  100% {
+    opacity: 0.72;
+    transform: translate3d(
+        calc(var(--point-drift-x) * 2),
+        calc(var(--point-drift-y) * 2),
+        0
+      )
+      scale(1.15);
+  }
+}
+.math-landing.is-still .landing-point {
+  animation: none;
+  opacity: 0.42;
 }
 
 .landing-field {
@@ -38,18 +228,24 @@
   padding: 0.08em 0 0.14em;
 }
 .landing-name {
-  font-family: "Major Mono Display", monospace;
-  font-size: clamp(5rem, min(14vw, 20svh), 17rem);
-  font-weight: 400;
-  line-height: 0.84;
-  letter-spacing: normal;
-  transform: translateX(-0.1em);
+    font-family: "Montserrat", sans-serif;
+    font-size: clamp(5rem, min(14vw, 20svh), 17rem);
+    font-weight: 400;
+    line-height: 0.84;
+    letter-spacing: normal;
+    transform: none;
 }
 .landing-name-line {
   display: block;
   width: max-content;
   overflow: hidden;
   white-space: nowrap;
+}
+.landing-name-line:first-child {
+  transform: translateX(0.3em);
+}
+.landing-name-line:nth-child(2) {
+  transform: translateX(0em);
 }
 .landing-name-line > span {
   display: block;
@@ -71,11 +267,11 @@
   gap: 0.58em;
   width: max-content;
   max-width: 100%;
-  font-family: "Major Mono Display", monospace;
+  font-family: "Space Grotesk Variable", sans-serif;
   font-style: normal;
   font-weight: 400;
   font-size: clamp(1.55rem, 2.2vw, 2.5rem);
-  line-height: 1.12;
+  line-height: -2;
   letter-spacing: normal;
 }
 .landing-role-mask svg {
@@ -300,6 +496,12 @@
   .about-paths {
     gap: 25px;
   }
+}
+@media (min-width: 1280px) {
+    .landing-roles {
+        margin-top: clamp(250px, 28.5svh, 320px);
+        margin-left: 22px;
+    }
 }
 @media (max-width: 760px) {
   .math-landing {
