@@ -11,10 +11,10 @@ import { profile } from "../content";
 import "./landing.css";
 
 const roles = [
-  { label: "a student", icon: "book" },
-  { label: "a thinker", icon: "thought" },
-  { label: "a photographer", icon: "camera" },
-  { label: "a software developer", icon: "code" },
+  { label: "A Student", icon: "book" },
+  { label: "A Thinker", icon: "thought" },
+  { label: "A Photographer", icon: "camera" },
+  { label: "A Software Developer", icon: "code" },
 ] as const;
 
 const nameRevealDuration = 1.15;
@@ -111,9 +111,8 @@ export default function Landing({
   ready?: boolean;
 }) {
   const [firstName, ...surname] = profile.name.split(" ");
-  const surnameText = surname.join(" ").toLowerCase();
-  const displayFirstName = `${firstName.charAt(0).toUpperCase()}${firstName.slice(1).toLowerCase()}`;
-  const displaySurname = `${surnameText.slice(0, -1)}${surnameText.slice(-1).toUpperCase()}`;
+  const displayFirstName = firstName.toUpperCase();
+  const displaySurname = surname.join(" ").toUpperCase();
   const section = useRef<HTMLElement>(null);
   const [figureIndex, setFigureIndex] = useState(0);
   const activeFigureIndex = figureIndex % figures.length;
@@ -138,6 +137,11 @@ export default function Landing({
       className={`math-landing${motionOff ? " is-still" : ""}`}
     >
       <div className="landing-stage">
+        <div className="landing-points" aria-hidden="true">
+          {Array.from({ length: 18 }, (_, index) => (
+            <span className="landing-point" key={index} />
+          ))}
+        </div>
         <motion.div
           className="landing-field"
           initial={motionOff ? false : { opacity: 0 }}

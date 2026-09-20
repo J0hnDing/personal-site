@@ -1493,7 +1493,7 @@ main {
   background: #8c9d93;
 }
 .intro {
-  background: #171c20;
+  background: #0b0c0d;
   color: #dfe3dd;
 }
 .intro-code-field {
@@ -1635,14 +1635,7 @@ main {
 }
 /* A continuous canvas with text-only navigation. */
 :root {
-  background: #1d2427;
-}
-.ambient-background {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: #1d2427;
+  background: #0b0c0d;
 }
 .site-header {
   width: auto;

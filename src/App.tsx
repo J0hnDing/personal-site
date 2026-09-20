@@ -784,9 +784,6 @@ export default function App() {
         <a className="skip-link" href="#main">
           Skip to content
         </a>
-        <div className="ambient-background" aria-hidden="true">
-          <MathField variant="code" motionOff={motionOff} contours={intro} />
-        </div>
         <div
           className="site-shell"
           data-intro={intro}
