@@ -3,6 +3,7 @@
 Project files are the source of truth. Keep changes scoped to this project and preserve unrelated work.
 
 ## Custom instructions
+When designing layout and doing Q/A you should always treat the full screen webpage as the canonical view rather than the side browser page size. 
 
 ## Subagents
 

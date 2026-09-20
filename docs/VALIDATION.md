@@ -23,7 +23,7 @@ Browser checks used the Codex in-app Chromium browser. Physical-device Safari/Fi
 
 ## Follow-up visual correction
 
-- Rechecked the original stacked sans-serif identity at 1280×720, 390×844, 320×740, and 844×390. Name, role lines, figure, and metadata remain readable without horizontal document overflow.
+- Rechecked the stacked Major Mono Display identity and aligned role block at full-screen desktop, 390×844, 320×700, and 1024×640. Name, role lines, icons, figure, and metadata remain readable without horizontal document overflow.
 - Visually confirmed the central background contours are absent after the intro.
 - Switched through all five figures and verified each number, title, and mathematical study description.
 - Adjusted mobile separation between roles and geometry, and short-landscape clearance above the figure metadata.

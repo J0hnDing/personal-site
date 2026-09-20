@@ -1,4 +1,12 @@
 @charset "UTF-8";
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("../fonts/IBMPlexMono/IBMPlexMono-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   font-family: "Space Grotesk Variable", Arial, sans-serif;
   color: #1d2427;
@@ -77,7 +85,7 @@ main:focus {
   outline: none;
 }
 .mono {
-  font-family: "DM Mono", monospace;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 0.75rem;
   line-height: 1.5;
   font-weight: 400;
@@ -615,7 +623,7 @@ em {
 }
 .registration {
   position: absolute;
-  font-family: monospace;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 1.75rem;
   background: var(--lavender);
   line-height: 1;

@@ -33,7 +33,7 @@ Routes include `/`, `/about`, `/projects/:slug`, `/thoughts/:slug`, and a missin
 
 ## Interaction and accessibility
 
-The multilingual intro uses staggered code textures, runs once per browser tab session, and can be skipped. The greetings fade out over a persistent code background. The figure fades in and the stacked sans-serif name rises into view; scrolling reveals four roles in sequence. New page text uses the same bottom-up entrance. Moving the pointer and using Next figure reshape the mathematical form. A fine-pointer cursor mark adds motion without capturing clicks or the wheel. The native cursor stays visible.
+The multilingual intro uses staggered code textures, runs once per browser tab session, and can be skipped. The greetings fade out over a persistent code background. The figure fades in while the two aligned name lines rise into view; a small animated chevron indicates the short pinned scroll, then fades as the four roles reveal while the name remains fixed. New page text uses the same bottom-up entrance. Moving the pointer and using Next figure reshape the mathematical form. A fine-pointer cursor mark adds motion without capturing clicks or the wheel. The native cursor stays visible.
 
 Reduced-motion users bypass the intro, pinned sequence, cursor mark, and continuous drawing. A footer motion control, visible keyboard focus, a skip link, five text navigation links at every viewport, and native photo dialogs support alternate ways of using the site. Canvas rendering is capped at 40 FPS and 1.75 device-pixel ratio, and pauses when offscreen or hidden. Fonts are bundled locally; there are no remote image or font requests.
 
