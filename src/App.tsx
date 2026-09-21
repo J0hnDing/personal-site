@@ -34,15 +34,23 @@ const ease = [0.76, 0, 0.24, 1] as const;
 const MotionPreference = createContext(false);
 const scrollPositions = new Map<string, number>();
 const introGreetings = [
-  { text: "Hello", hold: 900 },
-  { text: "Bonjour", hold: 220 },
-  { text: "Ciao", hold: 150 },
-  { text: "नमस्ते", hold: 100 },
-  { text: "Olá", hold: 70 },
-  { text: "Привет", hold: 70 },
-  { text: "안녕하세요", hold: 90 },
-  { text: "こんにちは", hold: 500 },
-  { text: "你好", hold: 900 },
+    { text: "Hello", hold: 1900 },
+
+    { text: "Bonjour", hold: 450 },
+    { text: "Ciao", hold: 357 },
+    { text: "नमस्ते", hold: 279 },
+    { text: "Olá", hold: 214 },
+    { text: "Hola", hold: 164 },
+    { text: "Hallo", hold: 129 },
+    { text: "Merhaba", hold: 107 },
+    { text: "مرحبا", hold: 100 },
+    { text: "สวัสดี", hold: 107 },
+    { text: "Xin chào", hold: 129 },
+    { text: "Γεια", hold: 164 },
+    { text: "Привет", hold: 214 },
+    { text: "안녕하세요", hold: 279 },
+    { text: "こんにちは", hold: 357 },
+    { text: "你好", hold: 450 },
 ] as const;
 const nav = [
   ["Home", "/#home"],

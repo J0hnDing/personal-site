@@ -271,7 +271,7 @@ em {
   bottom: 40px;
 }
 .intro-greeting {
-  font-size: clamp(3rem, 10vw, 10rem);
+  font-size: clamp(1.5rem, 5vw, 5rem);
   letter-spacing: -0.06em;
   display: flex;
   align-items: center;
@@ -1384,7 +1384,7 @@ em {
     font-size: 0.75rem;
   }
   .intro-greeting {
-    font-size: 13vw;
+    font-size: 6.5vw;
     gap: 15px;
   }
   .intro-dot {
@@ -1674,7 +1674,7 @@ main {
 }
 .quick-intro {
   position: relative;
-  background: #dce0da;
+  background: #d3d3d3;
   padding: clamp(100px, 16vw, 220px) var(--gutter);
 }
 .quick-intro > p {
