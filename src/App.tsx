@@ -34,23 +34,23 @@ const ease = [0.76, 0, 0.24, 1] as const;
 const MotionPreference = createContext(false);
 const scrollPositions = new Map<string, number>();
 const introGreetings = [
-    { text: "Hello", hold: 1900 },
+  { text: "Hello", hold: 1900 },
 
-    { text: "Bonjour", hold: 450 },
-    { text: "Ciao", hold: 357 },
-    { text: "नमस्ते", hold: 279 },
-    { text: "Olá", hold: 214 },
-    { text: "Hola", hold: 164 },
-    { text: "Hallo", hold: 129 },
-    { text: "Merhaba", hold: 107 },
-    { text: "مرحبا", hold: 100 },
-    { text: "สวัสดี", hold: 107 },
-    { text: "Xin chào", hold: 129 },
-    { text: "Γεια", hold: 164 },
-    { text: "Привет", hold: 214 },
-    { text: "안녕하세요", hold: 279 },
-    { text: "こんにちは", hold: 357 },
-    { text: "你好", hold: 450 },
+  { text: "Bonjour", hold: 450 },
+  { text: "Ciao", hold: 357 },
+  { text: "नमस्ते", hold: 279 },
+  { text: "Olá", hold: 214 },
+  { text: "Hola", hold: 164 },
+  { text: "Hallo", hold: 129 },
+  { text: "Merhaba", hold: 107 },
+  { text: "مرحبا", hold: 100 },
+  { text: "สวัสดี", hold: 107 },
+  { text: "Xin chào", hold: 129 },
+  { text: "Γεια", hold: 164 },
+  { text: "Привет", hold: 214 },
+  { text: "안녕하세요", hold: 279 },
+  { text: "こんにちは", hold: 357 },
+  { text: "你好", hold: 450 },
 ] as const;
 const nav = [
   ["Home", "/#home"],
@@ -255,56 +255,59 @@ function ProjectIndex() {
   const motionOff = useContext(MotionPreference);
   const [active, setActive] = useState(0);
   const project = projects[active];
+  const previewImage = project.images[0];
   return (
     <section
-      className="project-section"
+      className={`project-section${motionOff ? " is-still" : ""}`}
       id="projects"
       data-scroll-snap
       style={{ "--project-accent": project.accent } as CSSProperties}
     >
+      <div className="landing-points" aria-hidden="true">
+        {Array.from({ length: 18 }, (_, index) => (
+          <span className="landing-point" key={index} />
+        ))}
+      </div>
       <div className="project-layout">
         <div className="project-aside">
-          <h2>Projects</h2>
-          <div className="project-orbit">
-            <motion.div
-              animate={{ rotate: active * 45 }}
-              transition={{ duration: motionOff ? 0 : 0.8, ease }}
-            >
-              <Aperture petals={18} />
-            </motion.div>
-            <span className="orbit-number">{project.index}</span>
+          <h2>PROJECTS</h2>
+          <div className="project-image-stage" aria-label="Project image area">
+            {previewImage && (
+              <img src={previewImage.src} alt={previewImage.alt} />
+            )}
           </div>
         </div>
-        <div className="project-list">
-          {projects.map((p, i) => (
-            <Link
-              key={p.slug}
-              className={`project-row ${active === i ? "is-active" : ""}`}
-              to={`/projects/${p.slug}`}
-              onMouseEnter={() => setActive(i)}
-              onFocus={() => setActive(i)}
-              style={{ "--row-accent": p.accent } as CSSProperties}
-            >
-              <div className="project-row-meta mono">
-                <span>/{p.index}</span>
-                <span>
-                  {p.description
-                    ? "PROJECT NOTES"
-                    : "PROJECT NOTES FORTHCOMING"}
-                </span>
-              </div>
-              <div className="project-row-title">
+        <div className="project-list-column">
+          <div className="project-list">
+            {projects.map((p, i) => (
+              <Link
+                key={p.slug}
+                className={`project-row ${active === i ? "is-active" : ""}`}
+                to={`/projects/${p.slug}`}
+                onMouseEnter={() => setActive(i)}
+                onFocus={() => setActive(i)}
+                style={{ "--row-accent": p.accent } as CSSProperties}
+              >
                 <h3>
                   <ScrambleText text={p.title} motionOff={motionOff} />
                 </h3>
-                <Arrow />
-              </div>
-              <span className="project-row-bottom mono">
-                <ScrambleText text="EXPLORE PROJECT" motionOff={motionOff} />{" "}
-                <span>+</span>
-              </span>
-            </Link>
-          ))}
+                <svg
+                  className="project-row-arrow"
+                  viewBox="0 0 56 56"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M16.44 42.34 14 39.9l22.96-22.98H16.09v-3.5h26.83v26.83h-3.5V19.38L16.44 42.34Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </Link>
+            ))}
+          </div>
+          <button className="view-all-work" type="button" disabled>
+            View All Work <span aria-hidden="true">→</span>
+          </button>
         </div>
       </div>
     </section>
