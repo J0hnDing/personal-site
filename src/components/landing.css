@@ -216,12 +216,12 @@
 }
 
 .landing-identity {
-  position: absolute;
-  z-index: 2;
-  top: 8px;
-  left: clamp(22px, 3vw, 56px);
-  width: min(56vw, 1080px);
-  pointer-events: none;
+    position: absolute;
+    z-index: 2;
+    top: 50px;
+    left: clamp(22px, 3vw, 56px);
+    width: min(56vw, 1080px);
+    pointer-events: none;
 }
 .landing-name-mask {
   overflow: hidden;
@@ -570,35 +570,41 @@
   }
 }
 @media (max-height: 640px) and (min-width: 600px) {
-  .landing-identity {
-    top: 16px;
-  }
-  .landing-name {
-    font-size: min(16vw, 23svh);
-  }
-  .landing-roles {
-    margin-top: 18px;
-    gap: 8px;
-  }
-  .landing-role-mask p {
-    font-size: 1.15rem;
-    line-height: 1.1;
-  }
-  .landing-field {
-    top: 39%;
-    right: -2vw;
-    width: 84svh;
-    height: 84svh;
-  }
-  .landing-figure-control {
-    bottom: 18px;
-    max-width: 44%;
-  }
-  .figure-metadata {
-    font-size: 0.55rem;
-    gap: 4px;
-    margin-bottom: 8px;
-  }
+    .landing-identity {
+        top: 16px;
+    }
+
+    .landing-name {
+        font-size: min(16vw, 23svh);
+    }
+
+    .landing-roles {
+        margin-top: 18px;
+        gap: 8px;
+    }
+
+    .landing-role-mask p {
+        font-size: 1.15rem;
+        line-height: 1.1;
+    }
+
+    .landing-field {
+        top: 39%;
+        right: -2vw;
+        width: 84svh;
+        height: 84svh;
+    }
+
+    .landing-figure-control {
+        bottom: 18px;
+        max-width: 44%;
+    }
+
+    .figure-metadata {
+        font-size: 0.55rem;
+        gap: 4px;
+        margin-bottom: 8px;
+    }
 }
 @media (prefers-reduced-motion: reduce) {
   .math-landing {

@@ -1,5 +1,11 @@
 # Progress checkpoint — September 15, 2026
 
+## September 21 — Projects and landing consistency
+
+Rebuilt the project index around the Khanh Nguyen Chapter II composition while retaining the landing's near-black background, floating points, and silver/sage palette. The desktop layout uses a 60/40 split: the larger left column holds a substantial Montserrat `PROJECTS` title and bottom-aligned empty image frame, while the narrower right column contains only smaller project names and separation rules. Project names are softly grayed at rest and brighten without shifting on hover or keyboard focus. A reserved 56px northeast arrow fades and scales from its bottom-left corner in the same states; mobile keeps the arrows hidden. The decorative circle was removed, and the inactive `View All Work` action remains at the lower-right. Preserved project names, ScrambleText, detail navigation, and the pre-existing landing.css edits. Corrected the Projects anchor's scroll margin so the preceding light section does not remain visible above it.
+
+Production build and diff checks passed. Browser QA covered the full desktop viewport (1920px wide), 390px and 320px mobile widths with no horizontal overflow, the empty image state, the inactive View All Work control, and project navigation. No commit, push, or deployment.
+
 ## Completed
 
 - Converted Home into one continuous page: name and roles, quick introduction, Projects, Gallery, Thoughts, Contact.
