@@ -19,8 +19,8 @@ const roles = [
 
 const nameRevealDuration = 1.15;
 const firstNameDelay = 1.35;
-const surnameDelay = 2.55;
-const supportingRevealDelay = surnameDelay + nameRevealDuration + 0.6;
+const surnameDelay = 2.35;
+const supportingRevealDelay = surnameDelay + nameRevealDuration;
 
 type RoleIconKind = (typeof roles)[number]["icon"];
 
