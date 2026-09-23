@@ -271,7 +271,7 @@
         font-style: normal;
         font-weight: 200;
         font-size: clamp(1.55rem, 2.2vw, 2.5rem);
-        line-height: -2;
+        line-height: 1.15;
         letter-spacing: normal;
     }
 .landing-role-mask svg {
@@ -498,8 +498,15 @@
   }
 }
 @media (min-width: 1280px) {
+    .landing-identity {
+        bottom: clamp(44px, 7svh, 80px);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
     .landing-roles {
-        margin-top: clamp(250px, 28.5svh, 320px);
+        margin-top: 24px;
         margin-left: 22px;
     }
 }
