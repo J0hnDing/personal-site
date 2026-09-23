@@ -20,7 +20,7 @@ const roles = [
 const nameRevealDuration = 1.15;
 const firstNameDelay = 1.35;
 const surnameDelay = 2.35;
-const supportingRevealDelay = surnameDelay + nameRevealDuration;
+export const supportingRevealDelay = surnameDelay + nameRevealDuration;
 
 type RoleIconKind = (typeof roles)[number]["icon"];
 
@@ -133,7 +133,7 @@ export default function Landing({
     <section
       ref={section}
       id="home"
-      data-scroll-snap
+      data-scroll-section
       className={`math-landing${motionOff ? " is-still" : ""}`}
     >
       <div className="landing-stage">

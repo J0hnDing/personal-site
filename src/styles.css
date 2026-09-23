@@ -26,6 +26,7 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 100px;
+  scrollbar-gutter: stable;
 }
 body {
   margin: 0;
@@ -461,7 +462,7 @@ em {
   gap: 30px;
   justify-content: space-between;
 }
-.project-detail-head h1 > span {
+.project-detail-head h1 > .detail-title-arrow {
   font-size: 0.8em;
 }
 .project-deck {
@@ -1287,7 +1288,7 @@ em {
     overflow-wrap: anywhere;
     gap: 10px;
   }
-  .project-detail-head h1 > span {
+  .project-detail-head h1 > .detail-title-arrow {
     font-size: 0.55em;
   }
   .project-deck {
@@ -1683,7 +1684,7 @@ main {
   text-decoration: underline;
 }
 .intro {
-  background: transparent;
+  background: #0b0c0d;
 }
 .intro-top {
   justify-content: flex-end;
@@ -1691,20 +1692,91 @@ main {
 .quick-intro {
   position: relative;
   background: #d3d3d3;
-  padding: clamp(100px, 16vw, 220px) var(--gutter);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100svh;
+  padding: clamp(48px, 8svh, 110px) var(--gutter);
 }
+.quick-intro-copy,
 .quick-intro > p {
   max-width: 1120px;
+}
+.quick-intro-copy,
+.quick-intro > p {
   font-size: clamp(2rem, 4.6vw, 4.7rem);
   line-height: 1.22;
   letter-spacing: -0.05em;
+}
+.line-reveal {
+  position: relative;
+}
+.line-reveal:is(span) {
+  display: inline-block;
+}
+.line-reveal-measure {
+  color: transparent;
+}
+.line-reveal-lines {
+  position: absolute;
+  pointer-events: none;
+}
+.line-reveal-mask {
+  display: block;
+  overflow: hidden;
+}
+.line-reveal-line {
+  display: block;
+  white-space: nowrap;
+  opacity: 0;
+  filter: blur(6px);
+  transform: translateY(105%);
+  transition:
+    opacity 0.6s ease calc(180ms + var(--line-index) * 140ms),
+    filter 0.8s ease calc(180ms + var(--line-index) * 140ms),
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1)
+      calc(180ms + var(--line-index) * 140ms);
+}
+.line-reveal.is-revealed .line-reveal-line {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0);
 }
 .quick-intro .text-link {
   margin-top: 46px;
   font-size: 1rem;
 }
+.home-page {
+  isolation: isolate;
+}
+.home-page > .math-landing:not(.is-still) {
+  position: sticky;
+  top: -80svh;
+  z-index: 0;
+}
+.home-page > [data-scroll-section]:not(.math-landing) {
+  position: sticky;
+  top: 0;
+  z-index: var(--chapter-layer);
+  clip-path: inset(0);
+}
+.home-page > .quick-intro {
+  --chapter-layer: 1;
+}
+.home-page > .project-section {
+  --chapter-layer: 2;
+}
+.home-page > .gallery-page {
+  --chapter-layer: 3;
+}
+.home-page > .thoughts-page {
+  --chapter-layer: 4;
+}
+.home-page > .contact-page {
+  --chapter-layer: 5;
+}
 .home-page > section:not(.math-landing):not(.project-section) {
-  scroll-margin-top: 70px;
+  scroll-margin-top: 0;
 }
 .home-page > .project-section {
   padding-top: 100px;
@@ -1716,8 +1788,22 @@ main {
 .home-page > .gallery-page,
 .home-page > .thoughts-page,
 .home-page > .contact-page {
-  padding-top: 100px;
-  padding-bottom: 100px;
+  min-height: 100svh;
+  padding-top: clamp(44px, 6svh, 64px);
+  padding-bottom: clamp(44px, 6svh, 64px);
+}
+.home-page > .gallery-page {
+  padding-top: clamp(40px, 5.5svh, 55px);
+  padding-bottom: clamp(40px, 5.5svh, 55px);
+}
+.home-page .contact-heading {
+  padding: 15px 0;
+}
+.home-page .contact-heading > .aperture {
+  width: min(18vw, 300px);
+}
+.home-page .contact-bottom {
+  margin-top: 30px;
 }
 .gallery-heading,
 .thoughts-heading,
@@ -1751,31 +1837,52 @@ main {
   opacity: 0;
   transform: translateY(35px);
   clip-path: inset(100% -20px -20px);
+  filter: blur(6px);
   transition:
-    opacity 0.75s ease,
-    transform 0.85s cubic-bezier(0.22, 1, 0.36, 1),
-    clip-path 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.6s ease 180ms,
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1) 180ms,
+    clip-path 0.9s cubic-bezier(0.22, 1, 0.36, 1) 180ms,
+    filter 0.8s ease 180ms;
 }
 .text-reveal.text-revealed,
 .text-reveal:focus-visible {
   opacity: 1;
   transform: translateY(0);
   clip-path: inset(-20px -20px -20px);
+  filter: blur(0);
 }
 html[data-motion="off"] .text-reveal {
   opacity: 1;
   transform: none;
   clip-path: none;
+  filter: none;
   transition: none;
 }
 html[data-motion="off"] {
   scroll-behavior: auto;
 }
+html[data-motion="off"] .home-page > [data-scroll-section]:not(.math-landing) {
+  position: relative;
+  z-index: auto;
+  clip-path: none;
+}
 @media (prefers-reduced-motion: reduce) {
+  .home-page > [data-scroll-section]:not(.math-landing) {
+    position: relative;
+    z-index: auto;
+    clip-path: none;
+  }
   .text-reveal {
     opacity: 1;
     transform: none;
     clip-path: none;
+    filter: none;
+    transition: none;
+  }
+  .line-reveal-line {
+    opacity: 1;
+    transform: none;
+    filter: none;
     transition: none;
   }
 }
@@ -1809,7 +1916,7 @@ html[data-motion="off"] {
   opacity: 0;
 }
 .site-shell .site-header {
-  transition: opacity 0.8s ease;
+  transition: opacity 0.8s ease var(--supporting-reveal-delay);
 }
 .project-context {
   grid-template-columns: 1fr;
@@ -1839,7 +1946,7 @@ main > section:focus {
 .home-page .project-layout {
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: clamp(72px, 8vw, 145px);
-  min-height: calc(100svh - clamp(134px, 17vh, 190px));
+  min-height: calc(100svh - clamp(82px, 10vh, 112px) - clamp(52px, 7vh, 78px));
   padding: 0;
 }
 .project-aside {
@@ -1942,7 +2049,7 @@ main > section:focus {
   align-items: center;
   gap: clamp(24px, 2vw, 42px);
   margin-top: auto;
-  padding: 20px 0 0;
+  padding: 18px 0 0;
   color: #e1e4de;
   font-size: clamp(1.15rem, 1.65vw, 2rem);
   line-height: 1;
@@ -1957,11 +2064,87 @@ main > section:focus {
   font-size: 1.1em;
 }
 
+/* Reveal the Projects layout in place as it enters the viewport. */
+.project-section:not(.is-still) .project-aside h2,
+.project-section:not(.is-still) .project-image-stage,
+.project-section:not(.is-still) .view-all-work,
+.project-section:not(.is-still) .landing-points {
+  opacity: 0;
+}
+.project-section:not(.is-still) .project-aside h2 {
+  filter: blur(6px);
+  transition:
+    opacity 0.7s ease,
+    filter 0.8s ease;
+}
+.project-section:not(.is-still) .project-image-stage,
+.project-section:not(.is-still) .view-all-work,
+.project-section:not(.is-still) .landing-points {
+  transition: opacity 0.8s ease 0.8s;
+}
+.project-section.is-revealed .project-aside h2,
+.project-section.is-revealed .project-image-stage,
+.project-section.is-revealed .view-all-work,
+.project-section.is-revealed .landing-points {
+  opacity: 1;
+}
+.project-section.is-revealed .project-aside h2 {
+  filter: blur(0);
+}
+.project-row-mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.18em;
+  margin-bottom: -0.18em;
+}
+.project-section:not(.is-still) .project-row-ink {
+  display: block;
+  opacity: 0;
+  filter: blur(6px);
+  transform: translateY(105%);
+  transition:
+    opacity 0.6s ease calc(0.8s + var(--row-index) * 0.16s),
+    filter 0.8s ease calc(0.8s + var(--row-index) * 0.16s),
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1)
+      calc(0.8s + var(--row-index) * 0.16s);
+}
+.project-section.is-revealed .project-row-ink,
+.project-row:focus-visible .project-row-ink {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0);
+}
+.project-section:not(.is-still) .project-row {
+  border-bottom-color: transparent;
+}
+.project-section:not(.is-still) .project-row::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: rgba(185, 199, 191, 0.28);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1)
+    calc(0.9s + var(--row-index) * 0.16s);
+}
+.project-section.is-revealed .project-row::after,
+.project-row:focus-visible::after {
+  transform: scaleX(1);
+}
+html[data-motion="off"] .project-section .project-aside h2,
+html[data-motion="off"] .project-section .project-row,
+html[data-motion="off"] .project-section .project-row-ink {
+  transition: none;
+}
+
 @media (max-width: 900px) {
   .project-section,
   .home-page > .project-section {
-    padding-top: 82px;
-    padding-bottom: 72px;
+    padding-top: 70px;
+    padding-bottom: 45px;
   }
   .project-layout,
   .home-page .project-layout {
@@ -1970,15 +2153,15 @@ main > section:focus {
   }
   .project-aside {
     display: block;
-    margin-bottom: 58px;
+    margin-bottom: 30px;
   }
   .project-aside h2,
   .project-section.standalone .project-aside h2 {
     font-size: clamp(2.8rem, 12vw, 4.5rem);
   }
   .project-image-stage {
-    width: 100%;
-    margin-top: clamp(90px, 18svh, 140px);
+    width: min(100%, 400px);
+    margin-top: clamp(60px, 10svh, 90px);
   }
   .project-list {
     margin-top: 0;
@@ -1996,5 +2179,39 @@ main > section:focus {
   .view-all-work {
     margin-top: 42px;
     font-size: 1.25rem;
+  }
+}
+@media (min-width: 600px) and (max-width: 900px) {
+  .home-page > .project-section {
+    padding-top: 60px;
+    padding-bottom: 35px;
+  }
+  .home-page .project-aside {
+    margin-bottom: 20px;
+  }
+  .home-page .project-image-stage {
+    margin-top: 60px;
+  }
+  .home-page .project-row {
+    padding: 14px 0;
+  }
+}
+@media (max-width: 599px) and (max-height: 700px) {
+  .home-page > .project-section {
+    padding-top: 60px;
+    padding-bottom: 35px;
+  }
+  .home-page .project-aside {
+    margin-bottom: 10px;
+  }
+  .home-page .project-image-stage {
+    width: min(100%, 280px);
+    margin-top: 30px;
+  }
+  .home-page .project-row {
+    padding: 12px 0;
+  }
+  .home-page .view-all-work {
+    margin-top: 20px;
   }
 }

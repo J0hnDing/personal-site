@@ -22,9 +22,10 @@ import {
   useReducedMotion,
 } from "motion/react";
 import { contacts, photography, profile, projects, thoughts } from "./content";
-import Landing from "./components/Landing";
+import Landing, { supportingRevealDelay } from "./components/Landing";
 import MathField from "./components/MathField";
 import CursorMark from "./components/CursorMark";
+import LineRevealText from "./components/LineRevealText";
 import ScrambleText from "./components/ScrambleText";
 import SmoothScroll from "./components/SmoothScroll";
 import { scrollPageTo } from "./components/scrollController";
@@ -254,13 +255,32 @@ function Footer({
 function ProjectIndex() {
   const motionOff = useContext(MotionPreference);
   const [active, setActive] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
   const project = projects[active];
   const previewImage = project.images[0];
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || motionOff || revealed) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setRevealed(true);
+        observer.disconnect();
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -10% 0px" },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [motionOff, revealed]);
+
   return (
     <section
-      className={`project-section${motionOff ? " is-still" : ""}`}
+      ref={sectionRef}
+      className={`project-section${motionOff ? " is-still" : ""}${revealed ? " is-revealed" : ""}`}
       id="projects"
-      data-scroll-snap
+      data-scroll-section
       style={{ "--project-accent": project.accent } as CSSProperties}
     >
       <div className="landing-points" aria-hidden="true">
@@ -270,7 +290,7 @@ function ProjectIndex() {
       </div>
       <div className="project-layout">
         <div className="project-aside">
-          <h2>PROJECTS</h2>
+          <h2>Projects</h2>
           <div className="project-image-stage" aria-label="Project image area">
             {previewImage && (
               <img src={previewImage.src} alt={previewImage.alt} />
@@ -286,10 +306,19 @@ function ProjectIndex() {
                 to={`/projects/${p.slug}`}
                 onMouseEnter={() => setActive(i)}
                 onFocus={() => setActive(i)}
-                style={{ "--row-accent": p.accent } as CSSProperties}
+                style={
+                  {
+                    "--row-accent": p.accent,
+                    "--row-index": i,
+                  } as CSSProperties
+                }
               >
                 <h3>
-                  <ScrambleText text={p.title} motionOff={motionOff} />
+                  <span className="project-row-mask">
+                    <span className="project-row-ink">
+                      <ScrambleText text={p.title} motionOff={motionOff} />
+                    </span>
+                  </span>
                 </h3>
                 <svg
                   className="project-row-arrow"
@@ -321,10 +350,14 @@ function Home({ motionOff, ready }: { motionOff: boolean; ready: boolean }) {
       <section
         className="quick-intro"
         id="about"
-        data-scroll-snap
+        data-scroll-section
         aria-label="Introduction"
       >
-        <p>{profile.intro}</p>
+        <LineRevealText
+          text={profile.intro}
+          motionOff={motionOff}
+          className="quick-intro-copy"
+        />
         <Link className="text-link" to="/about">
           <ScrambleText text="More about me" motionOff={motionOff} /> <Arrow />
         </Link>
@@ -349,7 +382,7 @@ function ContentSection({
   children: ReactNode;
 }) {
   return embedded ? (
-    <section id={id} className={className} data-scroll-snap aria-label={id}>
+    <section id={id} className={className} data-scroll-section aria-label={id}>
       {children}
     </section>
   ) : (
@@ -361,9 +394,9 @@ function About({ motionOff }: { motionOff: boolean }) {
   return (
     <Page className="about-page">
       <div className="about-heading">
-        <h1>About</h1>
+        <LineRevealText as="h1" text="About" motionOff={motionOff} />
         <div className="about-intro">
-          <p>{profile.intro}</p>
+          <LineRevealText text={profile.intro} motionOff={motionOff} />
           {profile.introIsDraft && (
             <span className="draft-label mono">INTRODUCTION / DRAFT COPY</span>
           )}
@@ -376,34 +409,38 @@ function About({ motionOff }: { motionOff: boolean }) {
       </div>
       <div className="about-paths">
         <Link to="/projects">
-          <h2>Projects ↗</h2>
-          <p>
-            Eidolon, Eidolon Atlas, Cubic, and Projector. Four projects, each
-            with space for its own story.
-          </p>
+          <LineRevealText as="h2" text="Projects ↗" motionOff={motionOff} />
+          <LineRevealText
+            text="Eidolon, Eidolon Atlas, Cubic, and Projector. Four projects, each with space for its own story."
+            motionOff={motionOff}
+          />
         </Link>
         <Link to="/gallery">
-          <h2>Gallery ↗</h2>
-          <p>
-            A collection for my photography. Original photographs will be added
-            here.
-          </p>
+          <LineRevealText as="h2" text="Gallery ↗" motionOff={motionOff} />
+          <LineRevealText
+            text="A collection for my photography. Original photographs will be added here."
+            motionOff={motionOff}
+          />
         </Link>
         <Link to="/thoughts">
-          <h2>Thoughts ↗</h2>
-          <p>A notebook for thoughts, questions, and answers.</p>
+          <LineRevealText as="h2" text="Thoughts ↗" motionOff={motionOff} />
+          <LineRevealText
+            text="A notebook for thoughts, questions, and answers."
+            motionOff={motionOff}
+          />
         </Link>
       </div>
     </Page>
   );
 }
 function Placeholder() {
+  const motionOff = useContext(MotionPreference);
   return (
     <div className="visual-placeholder">
       <span className="placeholder-cross" aria-hidden="true">
         +
       </span>
-      <p>Project image to be added.</p>
+      <LineRevealText text="Project image to be added." motionOff={motionOff} />
     </div>
   );
 }
@@ -423,19 +460,31 @@ function ProjectDetail({ slug }: { slug: string }) {
           ← <ScrambleText text="ALL PROJECTS" motionOff={motionOff} />
         </Link>
         <h1>
-          {project.title}
-          <span>↗</span>
+          <LineRevealText
+            as="span"
+            text={project.title}
+            motionOff={motionOff}
+          />
+          <span className="detail-title-arrow" aria-hidden="true">
+            ↗
+          </span>
         </h1>
-        <p className="project-deck">
-          {project.description || "Project description to come."}
-        </p>
+        <LineRevealText
+          text={project.description || "Project description to come."}
+          motionOff={motionOff}
+          className="project-deck"
+        />
       </section>
       <div className="detail-body">
         {project.images.length ? (
           project.images.map((image) => (
             <figure className="project-image" key={image.src}>
               <img src={image.src} alt={image.alt} loading="lazy" />
-              <figcaption>{image.caption}</figcaption>
+              <LineRevealText
+                as="figcaption"
+                text={image.caption}
+                motionOff={motionOff}
+              />
             </figure>
           ))
         ) : (
@@ -443,11 +492,14 @@ function ProjectDetail({ slug }: { slug: string }) {
         )}
         <div className="project-context">
           <div>
-            <h2>Context</h2>
-            <p>
-              {project.context ||
-                "The story behind this project will go here: what prompted it, what it explores, and how it took shape."}
-            </p>
+            <LineRevealText as="h2" text="Context" motionOff={motionOff} />
+            <LineRevealText
+              text={
+                project.context ||
+                "The story behind this project will go here: what prompted it, what it explores, and how it took shape."
+              }
+              motionOff={motionOff}
+            />
             {!project.context && (
               <span className="mono content-pending">CONTENT PLACEHOLDER</span>
             )}
@@ -455,19 +507,28 @@ function ProjectDetail({ slug }: { slug: string }) {
         </div>
         <div className="project-context">
           <div>
-            <h2>Technical notes.</h2>
+            <LineRevealText
+              as="h2"
+              text="Technical notes."
+              motionOff={motionOff}
+            />
             {project.technicalDetails.length ? (
               <ul>
                 {project.technicalDetails.map((detail) => (
-                  <li key={detail}>{detail}</li>
+                  <LineRevealText
+                    as="li"
+                    text={detail}
+                    motionOff={motionOff}
+                    key={detail}
+                  />
                 ))}
               </ul>
             ) : (
               <>
-                <p>
-                  Architecture, tools, implementation decisions, and lessons
-                  learned will be added here.
-                </p>
+                <LineRevealText
+                  text="Architecture, tools, implementation decisions, and lessons learned will be added here."
+                  motionOff={motionOff}
+                />
                 <span className="mono content-pending">
                   CONTENT PLACEHOLDER
                 </span>
@@ -521,7 +582,7 @@ function Gallery({ embedded = false }: { embedded?: boolean }) {
   return (
     <ContentSection embedded={embedded} id="gallery" className="gallery-page">
       <div className="gallery-heading">
-        <Heading>Gallery</Heading>
+        <LineRevealText as={Heading} text="Gallery" motionOff={motionOff} />
       </div>
       {photography.length ? (
         <div className="photo-collection">
@@ -555,7 +616,10 @@ function Gallery({ embedded = false }: { embedded?: boolean }) {
             <Aperture petals={12} />
           </div>
           <div className="empty-gallery-copy">
-            <p>Original photography will be added here.</p>
+            <LineRevealText
+              text="Original photography will be added here."
+              motionOff={motionOff}
+            />
           </div>
         </div>
       )}
@@ -615,7 +679,7 @@ function Thoughts({ embedded = false }: { embedded?: boolean }) {
   return (
     <ContentSection embedded={embedded} id="thoughts" className="thoughts-page">
       <div className="thoughts-heading">
-        <Heading>Thoughts</Heading>
+        <LineRevealText as={Heading} text="Thoughts" motionOff={motionOff} />
         <span aria-hidden="true">✳</span>
       </div>
       <div className="thought-index">
@@ -623,15 +687,20 @@ function Thoughts({ embedded = false }: { embedded?: boolean }) {
           <Link to={`/thoughts/${thought.slug}`} key={thought.slug}>
             <span className="mono">/{String(i + 1).padStart(2, "0")}</span>
             <div>
-              <span className="sample-label mono">
-                {thought.isSample
-                  ? "SAMPLE / LAYOUT DEMONSTRATION"
-                  : thought.kind}
-              </span>
+              <LineRevealText
+                as="span"
+                className="sample-label mono"
+                text={
+                  thought.isSample
+                    ? "SAMPLE / LAYOUT DEMONSTRATION"
+                    : thought.kind
+                }
+                motionOff={motionOff}
+              />
               <h2>
                 <ScrambleText text={thought.title} motionOff={motionOff} />
               </h2>
-              <p>{thought.excerpt}</p>
+              <LineRevealText text={thought.excerpt} motionOff={motionOff} />
             </div>
             <Arrow />
           </Link>
@@ -652,28 +721,48 @@ function ThoughtDetail({ slug }: { slug: string }) {
       </Link>
       <article>
         <header>
-          <span className="mono sample-label">
-            {thought.isSample
-              ? "SAMPLE THOUGHT / TYPOGRAPHY DEMONSTRATION"
-              : thought.kind}
-          </span>
-          <h1>{thought.title}</h1>
-          <p className="article-deck">{thought.excerpt}</p>
+          <LineRevealText
+            as="span"
+            className="mono sample-label"
+            text={
+              thought.isSample
+                ? "SAMPLE THOUGHT / TYPOGRAPHY DEMONSTRATION"
+                : thought.kind
+            }
+            motionOff={motionOff}
+          />
+          <LineRevealText as="h1" text={thought.title} motionOff={motionOff} />
+          <LineRevealText
+            text={thought.excerpt}
+            className="article-deck"
+            motionOff={motionOff}
+          />
           {thought.isSample && (
-            <p className="sample-notice">
-              This sample demonstrates the reading layout. It is not a piece
-              written by John.
-            </p>
+            <LineRevealText
+              text="This sample demonstrates the reading layout. It is not a piece written by John."
+              className="sample-notice"
+              motionOff={motionOff}
+            />
           )}
         </header>
         <div className="article-content">
           {thought.blocks.map((block, i) =>
             block.type === "heading" ? (
-              <h2 key={i}>{block.text}</h2>
+              <LineRevealText
+                as="h2"
+                text={block.text}
+                motionOff={motionOff}
+                key={i}
+              />
             ) : block.type === "quote" ? (
-              <blockquote key={i}>{block.text}</blockquote>
+              <LineRevealText
+                as="blockquote"
+                text={block.text}
+                motionOff={motionOff}
+                key={i}
+              />
             ) : (
-              <p key={i}>{block.text}</p>
+              <LineRevealText text={block.text} motionOff={motionOff} key={i} />
             ),
           )}
         </div>
@@ -694,14 +783,18 @@ function Contact({ embedded = false }: { embedded?: boolean }) {
   return (
     <ContentSection embedded={embedded} id="contact" className="contact-page">
       <div className="contact-heading">
-        <Heading>Contact</Heading>
+        <LineRevealText as={Heading} text="Contact" motionOff={motionOff} />
         <Aperture petals={20} />
       </div>
       <div className="contact-bottom">
         <div className="contact-list">
           {contacts.map((contact) => (
             <div className="contact-row" key={contact.label}>
-              <span>{contact.label}</span>
+              <LineRevealText
+                as="span"
+                text={contact.label}
+                motionOff={motionOff}
+              />
               {contact.href ? (
                 <a
                   href={contact.href}
@@ -734,9 +827,16 @@ function NotFound() {
     <Page className="not-found">
       <span className="mono">404 / A SMALL DETOUR</span>
       <h1>
-        Nothing
+        <LineRevealText as="span" text="Nothing" motionOff={motionOff} />
         <br />
-        <em>here.</em>
+        <em>
+          <LineRevealText
+            as="span"
+            text="here."
+            motionOff={motionOff}
+            startIndex={1}
+          />
+        </em>
       </h1>
       <Link className="text-link" to="/">
         <ScrambleText text="Back to familiar ground" motionOff={motionOff} />{" "}
@@ -779,10 +879,10 @@ export default function App() {
   }, [motionOff, finishIntro]);
   useEffect(() => {
     if (!intro) return;
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const overflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = overflow;
+      document.documentElement.style.overflow = overflow;
     };
   }, [intro]);
   return (
@@ -799,6 +899,11 @@ export default function App() {
           className="site-shell"
           data-intro={intro}
           inert={intro || undefined}
+          style={
+            {
+              "--supporting-reveal-delay": `${supportingRevealDelay}s`,
+            } as CSSProperties
+          }
         >
           <Header />
           <div>

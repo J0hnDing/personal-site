@@ -1,6 +1,6 @@
 import { useEffect, type RefObject } from "react";
 
-/** Shared entrance treatment, including text added to pages in the future. */
+/** Fallback for mixed/interactive markup; plain text uses LineRevealText. */
 export function useTextReveals(
   root: RefObject<HTMLElement | null>,
   motionOff: boolean,
@@ -24,9 +24,12 @@ export function useTextReveals(
           "h1, h2, h3, p, blockquote, figcaption, .text-link, .back-link, .contact-row, .sample-label, .project-row-meta, .project-row-bottom",
         )
         .forEach((element) => {
-          // The hero owns its scroll-driven masked animation.
+          // The hero and semantic line-reveal elements own their entrances.
           if (
             element.closest(".math-landing") ||
+            element.closest(".project-section") ||
+            element.closest("[data-line-reveal]") ||
+            element.querySelector("[data-line-reveal]") ||
             element.classList.contains("text-reveal")
           )
             return;
