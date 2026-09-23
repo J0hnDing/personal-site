@@ -1,145 +1,141 @@
 import { useEffect, useRef } from "react";
 import "./cursor-mark.css";
 
-type CursorMarkProps = {
-  motionOff?: boolean;
-};
-
+type CursorMarkProps = { motionOff?: boolean };
 const interactiveSelector =
   'a, button, input, textarea, select, summary, [role="button"], [data-cursor="interactive"]';
+const restingSize = 36;
+const hoverPaddingX = 10;
+const hoverPaddingY = 8;
+const followDelayMs = 60;
 
 function findInteractiveTarget(target: EventTarget | null): Element | null {
   return target instanceof Element ? target.closest(interactiveSelector) : null;
 }
 
-/**
- * A small, content-free pointer companion for precise pointer devices.
- *
- * The browser pointer stays visible and owns all input. This element only
- * follows it visually, so it cannot intercept links, buttons, or focus.
- */
+/** Four corner brackets that follow the pointer and fit hovered elements. */
 export default function CursorMark({ motionOff = false }: CursorMarkProps) {
   const markRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (motionOff) return;
-
     const mark = markRef.current;
     if (!mark) return;
-
     const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-    // CSS also keeps the mark out of coarse-pointer layouts. Avoid attaching
-    // document listeners there so touch and pen input stay completely idle.
     if (!finePointer.matches || reducedMotion.matches) return;
 
     let frame: number | null = null;
     let paused = document.visibilityState === "hidden";
     let positioned = false;
+    let pointerX = 0;
+    let pointerY = 0;
     let x = 0;
     let y = 0;
-    let targetX = 0;
-    let targetY = 0;
-    let velocityX = 0;
-    let velocityY = 0;
+    let width = restingSize;
+    let height = restingSize;
+    let hovered: Element | null = null;
+    let lastFrameTime = 0;
 
     const hide = () => {
-      mark.classList.remove("is-visible", "is-interactive");
-      if (frame !== null) {
-        cancelAnimationFrame(frame);
-        frame = null;
-      }
-      velocityX = 0;
-      velocityY = 0;
+      mark.classList.remove("is-visible");
+      document.documentElement.classList.remove("has-custom-cursor");
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = null;
+      lastFrameTime = 0;
       positioned = false;
+      hovered = null;
+      width = restingSize;
+      height = restingSize;
+      mark.style.width = `${restingSize}px`;
+      mark.style.height = `${restingSize}px`;
     };
 
-    const setInteractive = (target: EventTarget | null) => {
-      mark.classList.toggle(
-        "is-interactive",
-        Boolean(findInteractiveTarget(target)),
-      );
-    };
-
-    const settle = () => {
+    const settle = (time: number) => {
       frame = null;
       if (paused || !positioned) return;
+      const elapsed = lastFrameTime ? Math.min(time - lastFrameTime, 32) : 16.7;
+      lastFrameTime = time;
 
-      const deltaX = targetX - x;
-      const deltaY = targetY - y;
-      velocityX = (velocityX + deltaX * 0.18) * 0.7;
-      velocityY = (velocityY + deltaY * 0.18) * 0.7;
-      x += velocityX;
-      y += velocityY;
+      // Keep fitting the target when scroll or transitions move it.
+      if (hovered && !hovered.isConnected) hovered = null;
+      const rect = hovered?.getBoundingClientRect();
+      const fits = rect && rect.width > 0 && rect.height > 0;
+      const targetX = fits ? rect.left + rect.width / 2 : pointerX;
+      const targetY = fits ? rect.top + rect.height / 2 : pointerY;
+      const targetWidth = fits
+        ? Math.max(restingSize, rect.width + hoverPaddingX * 2)
+        : restingSize;
+      const targetHeight = fits
+        ? Math.max(restingSize, rect.height + hoverPaddingY * 2)
+        : restingSize;
 
-      mark.style.setProperty("--cursor-x", `${x}px`);
-      mark.style.setProperty("--cursor-y", `${y}px`);
-      mark.style.setProperty(
-        "--cursor-angle",
-        `${Math.atan2(velocityY, velocityX) * (180 / Math.PI)}deg`,
-      );
+      // A time-based follow rate leaves a visible gap on quick sweeps, then
+      // lets the brackets catch up smoothly when the pointer slows or stops.
+      const follow = 1 - Math.exp(-elapsed / followDelayMs);
+      x += (targetX - x) * follow;
+      y += (targetY - y) * follow;
+      width += (targetWidth - width) * 0.2;
+      height += (targetHeight - height) * 0.2;
+      mark.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+      mark.style.width = `${width}px`;
+      mark.style.height = `${height}px`;
 
       if (
-        Math.abs(deltaX) < 0.08 &&
-        Math.abs(deltaY) < 0.08 &&
-        Math.abs(velocityX) < 0.08 &&
-        Math.abs(velocityY) < 0.08
+        hovered ||
+        Math.abs(targetX - x) > 0.1 ||
+        Math.abs(targetY - y) > 0.1 ||
+        Math.abs(targetWidth - width) > 0.1 ||
+        Math.abs(targetHeight - height) > 0.1
       ) {
-        x = targetX;
-        y = targetY;
-        mark.style.setProperty("--cursor-x", `${x}px`);
-        mark.style.setProperty("--cursor-y", `${y}px`);
-        return;
+        frame = requestAnimationFrame(settle);
+      } else {
+        lastFrameTime = 0;
       }
-
-      frame = requestAnimationFrame(settle);
     };
 
     const schedule = () => {
       if (frame === null && !paused) frame = requestAnimationFrame(settle);
     };
-
-    const handlePointerMove = (event: PointerEvent) => {
-      if (paused || event.pointerType === "touch") return;
-
-      targetX = event.clientX;
-      targetY = event.clientY;
-      setInteractive(event.target);
-
-      if (!positioned) {
-        x = targetX;
-        y = targetY;
-        positioned = true;
-        mark.style.setProperty("--cursor-x", `${x}px`);
-        mark.style.setProperty("--cursor-y", `${y}px`);
-      }
-
-      mark.classList.add("is-visible");
+    const setHovered = (target: EventTarget | null) => {
+      hovered = findInteractiveTarget(target);
       schedule();
     };
-
-    const handlePointerOver = (event: PointerEvent) => {
-      if (!paused) setInteractive(event.target);
-    };
-
-    const handlePointerOut = (event: PointerEvent) => {
-      if (event.relatedTarget === null) {
-        hide();
-        return;
+    const handlePointerMove = (event: PointerEvent) => {
+      if (paused || event.pointerType !== "mouse") return;
+      pointerX = event.clientX;
+      pointerY = event.clientY;
+      setHovered(event.target);
+      if (!positioned) {
+        x = pointerX;
+        y = pointerY;
+        positioned = true;
+        mark.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
       }
-      if (!paused) setInteractive(event.relatedTarget);
+      mark.classList.add("is-visible");
+      document.documentElement.classList.add("has-custom-cursor");
+      schedule();
     };
-
+    const handlePointerOver = (event: PointerEvent) => {
+      if (!paused && event.pointerType === "mouse") setHovered(event.target);
+    };
+    const handlePointerOut = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse") return;
+      if (event.relatedTarget === null) hide();
+      else if (!paused) setHovered(event.relatedTarget);
+    };
+    const handleScroll = () => {
+      if (positioned && !paused) {
+        setHovered(document.elementFromPoint(pointerX, pointerY));
+      }
+    };
     const handleBlur = () => {
       paused = true;
       hide();
     };
-
     const handleFocus = () => {
       paused = document.visibilityState === "hidden";
     };
-
     const handleVisibilityChange = () => {
       paused = document.visibilityState === "hidden";
       if (paused) hide();
@@ -152,35 +148,32 @@ export default function CursorMark({ motionOff = false }: CursorMarkProps) {
       passive: true,
     });
     window.addEventListener("pointerout", handlePointerOut, { passive: true });
+    window.addEventListener("scroll", handleScroll, {
+      passive: true,
+      capture: true,
+    });
     window.addEventListener("blur", handleBlur);
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibilityChange);
-
     return () => {
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerover", handlePointerOver);
       window.removeEventListener("pointerout", handlePointerOut);
+      window.removeEventListener("scroll", handleScroll, true);
       window.removeEventListener("blur", handleBlur);
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      if (frame !== null) cancelAnimationFrame(frame);
+      hide();
     };
   }, [motionOff]);
 
   if (motionOff) return null;
-
   return (
     <div ref={markRef} className="cursor-mark" aria-hidden="true">
-      <span className="cursor-mark__geometry">
-        <span className="cursor-mark__ring" />
-        <span className="cursor-mark__cross cursor-mark__cross--horizontal" />
-        <span className="cursor-mark__cross cursor-mark__cross--vertical" />
-        <span className="cursor-mark__corner cursor-mark__corner--north-west" />
-        <span className="cursor-mark__corner cursor-mark__corner--north-east" />
-        <span className="cursor-mark__corner cursor-mark__corner--south-west" />
-        <span className="cursor-mark__corner cursor-mark__corner--south-east" />
-      </span>
-      <span className="cursor-mark__accent">+</span>
+      <span className="cursor-mark__corner cursor-mark__corner--top-left" />
+      <span className="cursor-mark__corner cursor-mark__corner--top-right" />
+      <span className="cursor-mark__corner cursor-mark__corner--bottom-left" />
+      <span className="cursor-mark__corner cursor-mark__corner--bottom-right" />
     </div>
   );
 }
