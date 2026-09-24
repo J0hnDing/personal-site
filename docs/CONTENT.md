@@ -21,9 +21,11 @@ The editable portfolio content lives in [`src/content.ts`](../src/content.ts). T
 
 The project records currently use empty arrays and null fields so the interface can render clear placeholders without implying project facts. Add confirmed content directly to the matching record.
 
-## Images and public paths
+## Project images and Gallery
 
-Place an image file under `public/`, for example `public/images/project-overview.webp`, then reference it with the root-relative path `/images/project-overview.webp` in an image `src`. Keep `alt` text and captions accurate to the supplied asset. The same convention applies to future photography records. Photography is intentionally an empty typed array until real photographs are supplied.
+Place project images under `public/`, for example `public/images/project-overview.webp`, then reference them with the root-relative path `/images/project-overview.webp` in a project's `images` array. Keep `alt` text and captions accurate to the supplied asset.
+
+Gallery photographs live in the root `photos/` folder. The Gallery route discovers supported image files there and builds an irregular spatial layout from their intrinsic dimensions. `npm run dev` and `npm run build` generate 1800-pixel WebP derivatives under the ignored `public/gallery-assets/` directory; add or replace source photographs in `photos/` rather than editing those generated files. The layout changes on page load and remains stable for places already visited during that visit.
 
 ## Thoughts
 

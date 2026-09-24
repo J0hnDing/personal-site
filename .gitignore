@@ -1,5 +1,6 @@
 node_modules/
 dist/
+public/gallery-assets/
 .wrangler/
 .playwright-mcp/
 *.log

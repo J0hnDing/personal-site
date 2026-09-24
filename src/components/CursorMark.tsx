@@ -77,7 +77,7 @@ export default function CursorMark({ motionOff = false }: CursorMarkProps) {
       y += (targetY - y) * follow;
       width += (targetWidth - width) * 0.2;
       height += (targetHeight - height) * 0.2;
-      mark.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+      mark.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
       mark.style.width = `${width}px`;
       mark.style.height = `${height}px`;
 
@@ -98,11 +98,25 @@ export default function CursorMark({ motionOff = false }: CursorMarkProps) {
       if (frame === null && !paused) frame = requestAnimationFrame(settle);
     };
     const setHovered = (target: EventTarget | null) => {
+      if (
+        target instanceof Element &&
+        target.closest(".infinite-gallery")
+      ) {
+        hide();
+        return;
+      }
       hovered = findInteractiveTarget(target);
       schedule();
     };
     const handlePointerMove = (event: PointerEvent) => {
       if (paused || event.pointerType !== "mouse") return;
+      if (
+        event.target instanceof Element &&
+        event.target.closest(".infinite-gallery")
+      ) {
+        hide();
+        return;
+      }
       pointerX = event.clientX;
       pointerY = event.clientY;
       setHovered(event.target);
@@ -110,7 +124,7 @@ export default function CursorMark({ motionOff = false }: CursorMarkProps) {
         x = pointerX;
         y = pointerY;
         positioned = true;
-        mark.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+        mark.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
       }
       mark.classList.add("is-visible");
       document.documentElement.classList.add("has-custom-cursor");
