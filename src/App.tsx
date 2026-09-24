@@ -21,13 +21,14 @@ import {
   motion,
   useReducedMotion,
 } from "motion/react";
-import { contacts, photography, profile, projects, thoughts } from "./content";
+import { contacts, profile, projects, thoughts } from "./content";
 import Landing, { supportingRevealDelay } from "./components/Landing";
 import MathField from "./components/MathField";
 import CursorMark from "./components/CursorMark";
 import LineRevealText from "./components/LineRevealText";
 import ScrambleText from "./components/ScrambleText";
 import SmoothScroll from "./components/SmoothScroll";
+import InfiniteGallery from "./components/InfiniteGallery";
 import { scrollPageTo } from "./components/scrollController";
 import { useTextReveals } from "./components/useTextReveals";
 
@@ -56,7 +57,7 @@ const introGreetings = [
 const nav = [
   ["Home", "/#home"],
   ["Projects", "/#projects"],
-  ["Gallery", "/#gallery"],
+  ["Gallery", "/gallery"],
   ["Thoughts", "/#thoughts"],
   ["Contact", "/#contact"],
 ];
@@ -572,103 +573,14 @@ function ProjectDetail({ slug }: { slug: string }) {
 function Gallery({ embedded = false }: { embedded?: boolean }) {
   const motionOff = useContext(MotionPreference);
   const Heading = embedded ? "h2" : "h1";
-  const [selected, setSelected] = useState<number | null>(null);
-  const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    if (selected !== null) dialog.current?.showModal();
-    else dialog.current?.close();
-  }, [selected]);
-  const photo = selected !== null ? photography[selected] : null;
   return (
-    <ContentSection embedded={embedded} id="gallery" className="gallery-page">
-      <div className="gallery-heading">
-        <LineRevealText as={Heading} text="Gallery" motionOff={motionOff} />
-      </div>
-      {photography.length ? (
-        <div className="photo-collection">
-          {photography.map((p, i) => (
-            <button
-              key={p.id}
-              className="photo-item"
-              onClick={() => setSelected(i)}
-              aria-label={`View ${p.title}`}
-            >
-              <img
-                src={p.src}
-                alt={p.alt}
-                width={p.width}
-                height={p.height}
-                loading="lazy"
-              />
-              <span className="mono">
-                <ScrambleText text={p.title} motionOff={motionOff} /> ↗
-              </span>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="empty-exhibition">
-          <span className="registration top-left">+</span>
-          <span className="registration top-right">+</span>
-          <span className="registration bottom-left">+</span>
-          <span className="registration bottom-right">+</span>
-          <div className="empty-aperture">
-            <Aperture petals={12} />
-          </div>
-          <div className="empty-gallery-copy">
-            <LineRevealText
-              text="Original photography will be added here."
-              motionOff={motionOff}
-            />
-          </div>
-        </div>
-      )}
-      <dialog
-        ref={dialog}
-        className="photo-dialog"
-        aria-label="Photograph viewer"
-        onCancel={() => setSelected(null)}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) setSelected(null);
-        }}
-      >
-        <button
-          autoFocus
-          className="dialog-close mono"
-          onClick={() => setSelected(null)}
-        >
-          <ScrambleText text="Close" motionOff={motionOff} /> ×
-        </button>
-        {photo && (
-          <figure>
-            <img src={photo.src} alt={photo.alt} />
-            <figcaption>
-              {photo.title}
-              <span>{photo.caption}</span>
-            </figcaption>
-          </figure>
-        )}
-        <div className="photo-controls">
-          <button
-            disabled={selected === 0}
-            onClick={() =>
-              setSelected((i) => (i === null ? null : Math.max(0, i - 1)))
-            }
-          >
-            ← <ScrambleText text="Previous" motionOff={motionOff} />
-          </button>
-          <button
-            disabled={selected === photography.length - 1}
-            onClick={() =>
-              setSelected((i) =>
-                i === null ? null : Math.min(photography.length - 1, i + 1),
-              )
-            }
-          >
-            <ScrambleText text="Next" motionOff={motionOff} /> →
-          </button>
-        </div>
-      </dialog>
+    <ContentSection
+      embedded={embedded}
+      id="gallery"
+      className={`gallery-page gallery-page--${embedded ? "embedded" : "standalone"}`}
+    >
+      <Heading className="sr-only">Gallery</Heading>
+      <InfiniteGallery motionOff={motionOff} intro />
     </ContentSection>
   );
 }
@@ -926,7 +838,7 @@ export default function App() {
               ))}
               <Route
                 path="/gallery"
-                element={<Navigate to="/#gallery" replace />}
+                element={<Gallery />}
               />
               <Route
                 path="/thoughts"
@@ -945,11 +857,13 @@ export default function App() {
               />
               <Route path="*" element={<NotFound />} />
             </Routes>
-            <Footer
-              motionOff={motionOff}
-              systemReduced={!!prefersReducedMotion}
-              toggleMotion={() => setManualMotionOff((value) => !value)}
-            />
+            {location.pathname !== "/gallery" && (
+              <Footer
+                motionOff={motionOff}
+                systemReduced={!!prefersReducedMotion}
+                toggleMotion={() => setManualMotionOff((value) => !value)}
+              />
+            )}
           </div>
         </div>
         <AnimatePresence>

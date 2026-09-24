@@ -16,9 +16,7 @@ export default function SmoothScroll({ disabled }: { disabled: boolean }) {
             document.querySelectorAll<HTMLElement>("[data-scroll-section]"),
           )
         : [];
-    const gesturePause = 200;
     const boundaryHold = 500;
-    let lastInput = 0;
     let blockedBoundary: {
       sectionIndex: number;
       position: number;
@@ -62,29 +60,22 @@ export default function SmoothScroll({ disabled }: { disabled: boolean }) {
 
         const now = performance.now();
 
-        // A touch can release a settled gate only when a genuinely new gesture starts.
+        // Touch input may start a new gesture after the boundary pause.
         if (event.type === "touchstart") {
           if (blockedBoundary && now >= blockedBoundary.releaseAt) {
             blockedBoundary = null;
           }
-          lastInput = now;
           return true;
         }
         if (!deltaY) return true;
 
-        const startsNewWheelGesture =
-          event.type === "wheel" && now - lastInput > gesturePause;
-        lastInput = now;
         if (blockedBoundary !== null) {
           if (Math.sign(deltaY) !== blockedBoundary.direction) {
             // Reversing direction always releases the gate immediately.
             blockedBoundary = null;
-          } else if (!startsNewWheelGesture) {
-            // Inertia can outlast the initial hold, so start the dwell after
-            // the final event in this burst rather than after the first hit.
-            blockedBoundary.releaseAt = now + boundaryHold;
-            return block(event);
           } else if (now < blockedBoundary.releaseAt) {
+            // Keep the pause bounded even when a touchpad sends wheel events
+            // continuously; extending it per event can lock scrolling forever.
             return block(event);
           } else {
             blockedBoundary = null;

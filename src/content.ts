@@ -1,8 +1,9 @@
 /**
  * The editable content for the portfolio.
  *
- * Project facts, photography, and contact details are intentionally left
- * empty until they are supplied by John.
+ * Project facts and contact details are intentionally left empty until they
+ * are supplied by John. Gallery photography is loaded from the root photos
+ * folder and is not stored in this editable content file.
  */
 
 export type ProjectIndex = "01" | "02" | "03" | "04";
@@ -36,16 +37,6 @@ export interface Project {
   links: ProjectLink[];
 }
 
-export interface PhotographyItem {
-  id: string;
-  src: string;
-  alt: string;
-  title: string;
-  caption: string;
-  width: number;
-  height: number;
-}
-
 export type ThoughtBlockType = "paragraph" | "heading" | "quote";
 
 export interface ThoughtBlock {
@@ -73,7 +64,6 @@ export interface Contact {
 export interface Content {
   profile: Profile;
   projects: Project[];
-  photography: PhotographyItem[];
   thoughts: Thought[];
   contacts: Contact[];
 }
@@ -132,8 +122,6 @@ export const projects: Project[] = [
   },
 ];
 
-export const photography: PhotographyItem[] = [];
-
 export const thoughts: Thought[] = [
   {
     slug: "on-noticing",
@@ -170,7 +158,6 @@ export const contacts: Contact[] = [
 export const content: Content = {
   profile,
   projects,
-  photography,
   thoughts,
   contacts,
 };
