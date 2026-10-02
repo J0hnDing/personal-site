@@ -16,6 +16,7 @@ interface LineRevealTextProps {
   motionOff: boolean;
   className?: string;
   startIndex?: number;
+  onReveal?: () => void;
 }
 
 type Insets = [top: number, right: number, bottom: number, left: number];
@@ -37,6 +38,7 @@ export default function LineRevealText({
   motionOff,
   className = "",
   startIndex = 0,
+  onReveal,
 }: LineRevealTextProps) {
   const rootRef = useRef<HTMLElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
@@ -123,6 +125,11 @@ export default function LineRevealText({
 
     return () => observer.disconnect();
   }, [motionOff]);
+
+  useEffect(() => {
+    if (!revealed || !lines.length || !onReveal) return;
+    onReveal();
+  }, [revealed, lines.length, onReveal]);
 
   if (motionOff) return createElement(as, { className }, text);
 

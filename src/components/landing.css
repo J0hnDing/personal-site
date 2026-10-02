@@ -228,9 +228,9 @@
   padding: 0.08em 0 0.14em;
 }
 .landing-name {
-    font-family: "Montserrat", sans-serif;
+    font-family: "Outfit", sans-serif;
     font-size: clamp(5rem, min(14vw, 20svh), 17rem);
-    font-weight: 300;
+    font-weight: 200;
     line-height: 0.84;
     letter-spacing: normal;
     transform: none;
@@ -242,7 +242,7 @@
   white-space: nowrap;
 }
 .landing-name-line:first-child {
-  transform: translateX(0.311em);
+  transform: translateX(0.147em);
 }
 .landing-name-line:nth-child(2) {
   transform: translateX(0em);
@@ -255,7 +255,7 @@
   justify-items: start;
   gap: clamp(13px, 1.8svh, 20px);
   margin-top: clamp(36px, 5.5svh, 60px);
-  color: #b9c7bf;
+  color: #e1e4de;
 }
 .landing-role-mask {
   overflow: hidden;
@@ -267,11 +267,11 @@
         gap: 0.58em;
         width: max-content;
         max-width: 100%;
-        font-family: "Space Grotesk Variable", sans-serif;
+        font-family: "Outfit", sans-serif;
         font-style: normal;
         font-weight: 200;
-        font-size: clamp(1.55rem, 2.2vw, 2.5rem);
-        line-height: 1.15;
+        font-size: clamp(1.3rem, 1.7vw, 2.3rem);
+        line-height: 1;
         letter-spacing: normal;
     }
 .landing-role-mask svg {
@@ -334,7 +334,7 @@
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
-.landing-scroll-cue {
+.scroll-cue {
   position: absolute;
   z-index: 4;
   bottom: clamp(24px, 4svh, 42px);
@@ -343,11 +343,11 @@
   width: 24px;
   height: 24px;
   place-items: center;
-  color: #a9b6b6;
+  color: var(--scroll-cue-color, #a9b6b6);
   pointer-events: none;
   transform: translateX(-50%);
 }
-.landing-scroll-cue span {
+.scroll-cue span {
   width: 11px;
   height: 11px;
   border-right: 2.5px solid currentColor;
@@ -374,7 +374,7 @@
   position: relative;
   min-height: 100svh;
 }
-.math-landing.is-still .landing-scroll-cue span {
+.scroll-cue.is-still span {
   opacity: 0.55;
   animation: none;
   transform: rotate(45deg);
@@ -624,7 +624,7 @@
   .landing-figure-control button span {
     transition: none;
   }
-  .landing-scroll-cue span {
+  .scroll-cue span {
     opacity: 0.55;
     animation: none;
     transform: rotate(45deg);

@@ -16,23 +16,25 @@ Open [the local preview](http://127.0.0.1:5173). `npm run build` type-checks and
 
 ## Content
 
-Edit `src/content.ts` for the profile, projects, thoughts, and contact details. See [the content guide](docs/CONTENT.md) for the image workflow. The introduction uses John’s supplied fourth-year CS and Mathematics background at the University of Toronto. Project facts and contact details remain blank until confirmed. Gallery photographs come from the root `photos/` folder; local build and dev scripts create optimized derivatives without modifying the originals. One clearly identified thought demonstrates the reading layout.
+Edit `src/content.ts` for the profile, projects, thoughts, and contact details, and `src/pages/AboutPage.tsx` for the longer biography. See [the content guide](docs/CONTENT.md) for the image workflow. Project facts and contact details remain blank until confirmed. Gallery photographs come from `photos/` and its subfolders; local build and dev scripts create optimized derivatives without modifying the originals. Thoughts lists John’s supplied questions; article bodies await his writing.
 
 ## Structure
 
 - `src/App.tsx`: routes, navigation, intro, motion, and page components.
+- `src/pages/`: shared archive layout, biography, folder browsing, visual project case studies, and scoped styles.
 - `src/components/Landing.tsx`: name entrance, sequential scroll-revealed roles, and mathematical figure control.
 - `src/components/MathField.tsx`: procedural canvas geometry and code textures.
 - `src/components/InfiniteGallery.tsx`: the randomized, virtualized photo canvas and pan/zoom interaction.
 - `src/components/CursorMark.tsx`: nonblocking cursor companion.
-- `scripts/prepare-gallery-assets.mjs`: cached WebP derivatives for root `photos/` sources.
+- `scripts/prepare-gallery-assets.mjs`: cached WebP derivatives and folder metadata for `photos/` sources.
 - `src/components/useTextReveals.ts`: shared bottom-up text entrances, including newly added text.
 - `src/content.ts`: typed editable content.
 - `src/styles.css`: design tokens, layouts, interaction states, and responsive rules.
 - `public/`: favicon and future local images.
 - `docs/DESIGN.md`: reference study and visual decisions.
+- `docs/PROJECT_SOURCES.md`: project facts, screenshot provenance, and capture limitations.
 
-Routes include `/`, `/about`, `/gallery`, `/projects/:slug`, `/thoughts/:slug`, and a missing-page view. The `/projects`, `/thoughts`, and `/contact` index URLs redirect to their Home sections. Gallery is a dedicated infinite spatial canvas and also appears as a full-screen Home section. New project and thought records create their corresponding routes automatically.
+Home remains one continuous page, ending with Thoughts. The five header links lead to Home, `/projects`, `/gallery`, `/thoughts`, and `/about`. Projects and Thoughts are simple lists linking to their existing `/projects/:slug` and `/thoughts/:slug` details. Gallery lists folders, with photographs at `/gallery/:folder`; its infinite spatial canvas stays in the Home section. Contact information lives in About’s ruled Contact section. Both `/contact` and `/#contact` redirect to `/about#contact`. New project and thought records create their corresponding routes automatically.
 
 ## Interaction and accessibility
 

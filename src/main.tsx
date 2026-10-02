@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import "@fontsource/outfit/200.css";
 import "@fontsource/major-mono-display/400.css";
 import "@fontsource-variable/space-grotesk";
 import "./styles.css";

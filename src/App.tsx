@@ -21,16 +21,26 @@ import {
   motion,
   useReducedMotion,
 } from "motion/react";
-import { contacts, profile, projects, thoughts } from "./content";
+import { profile, projects, thoughts } from "./content";
 import Landing, { supportingRevealDelay } from "./components/Landing";
-import MathField from "./components/MathField";
 import CursorMark from "./components/CursorMark";
 import LineRevealText from "./components/LineRevealText";
 import ScrambleText from "./components/ScrambleText";
 import SmoothScroll from "./components/SmoothScroll";
 import InfiniteGallery from "./components/InfiniteGallery";
+import InfiniteThoughts from "./components/InfiniteThoughts";
+import QuickIntroduction from "./components/QuickIntroduction";
+import ScrollCue from "./components/ScrollCue";
 import { scrollPageTo } from "./components/scrollController";
 import { useTextReveals } from "./components/useTextReveals";
+import { ArchiveHeading, ArchiveRow } from "./pages/ArchiveLayout";
+import AboutContent from "./pages/AboutPage";
+import ProjectDetailContent from "./pages/ProjectDetailPage";
+import {
+  GalleryIndexContent,
+  GalleryFolderContent,
+} from "./pages/GalleryPages";
+import "./pages/archive.css";
 
 const ease = [0.76, 0, 0.24, 1] as const;
 const MotionPreference = createContext(false);
@@ -56,45 +66,16 @@ const introGreetings = [
 ] as const;
 const nav = [
   ["Home", "/#home"],
-  ["Projects", "/#projects"],
+  ["Projects", "/projects"],
   ["Gallery", "/gallery"],
-  ["Thoughts", "/#thoughts"],
-  ["Contact", "/#contact"],
+  ["Thoughts", "/thoughts"],
+  ["About", "/about"],
 ];
 const Arrow = () => (
   <span aria-hidden="true" className="arrow">
     ↗
   </span>
 );
-
-function Aperture({
-  className = "",
-  petals = 28,
-}: {
-  className?: string;
-  petals?: number;
-}) {
-  return (
-    <svg
-      className={`aperture ${className}`}
-      viewBox="0 0 500 500"
-      fill="none"
-      aria-hidden="true"
-    >
-      {Array.from({ length: petals }, (_, i) => (
-        <ellipse
-          key={i}
-          cx="250"
-          cy="250"
-          rx="218"
-          ry="76"
-          transform={`rotate(${(i * 180) / petals} 250 250)`}
-        />
-      ))}
-      <circle cx="250" cy="250" r="34" />
-    </svg>
-  );
-}
 
 function Intro({ done }: { done: () => void }) {
   const motionOff = useContext(MotionPreference);
@@ -156,10 +137,14 @@ function Header() {
             key={href}
             to={href}
             aria-current={
-              location.pathname === "/" &&
-              (location.hash || "#home") === href.slice(1)
-                ? "location"
-                : undefined
+              href === "/#home"
+                ? location.pathname === "/"
+                  ? "page"
+                  : undefined
+                : location.pathname === href ||
+                    location.pathname.startsWith(`${href}/`)
+                  ? "page"
+                  : undefined
             }
           >
             <ScrambleText text={label} motionOff={motionOff} />
@@ -199,12 +184,14 @@ function Page({
       "/projects": "Projects",
       "/gallery": "Gallery",
       "/thoughts": "Thoughts",
-      "/contact": "Contact",
     };
     const item =
       projects.find((p) => location.pathname === `/projects/${p.slug}`) ||
       thoughts.find((p) => location.pathname === `/thoughts/${p.slug}`);
-    document.title = `${item?.title || titles[location.pathname] || "Page not found"} — ${profile.name}`;
+    // Folder names arrive with the manifest; the folder page owns that title.
+    if (!location.pathname.startsWith("/gallery/")) {
+      document.title = `${item?.title || titles[location.pathname] || "Page not found"} — ${profile.name}`;
+    }
     const savePosition = () =>
       scrollPositions.set(location.key, window.scrollY);
     window.addEventListener("scroll", savePosition, { passive: true });
@@ -335,38 +322,28 @@ function ProjectIndex() {
               </Link>
             ))}
           </div>
-          <button className="view-all-work" type="button" disabled>
+          <Link className="view-all-work" to="/projects">
             View All Work <span aria-hidden="true">→</span>
-          </button>
+          </Link>
         </div>
       </div>
+      <ScrollCue motionOff={motionOff} />
     </section>
   );
 }
 
 function Home({ motionOff, ready }: { motionOff: boolean; ready: boolean }) {
+  const location = useLocation();
+  if (location.hash === "#contact") {
+    return <Navigate to="/about#contact" replace />;
+  }
   return (
     <Page className="home-page">
       <Landing motionOff={motionOff} ready={ready} />
-      <section
-        className="quick-intro"
-        id="about"
-        data-scroll-section
-        aria-label="Introduction"
-      >
-        <LineRevealText
-          text={profile.intro}
-          motionOff={motionOff}
-          className="quick-intro-copy"
-        />
-        <Link className="text-link" to="/about">
-          <ScrambleText text="More about me" motionOff={motionOff} /> <Arrow />
-        </Link>
-      </section>
+      <QuickIntroduction motionOff={motionOff} />
       <ProjectIndex />
       <Gallery embedded />
       <Thoughts embedded />
-      <Contact embedded />
     </Page>
   );
 }
@@ -382,9 +359,11 @@ function ContentSection({
   className: string;
   children: ReactNode;
 }) {
+  const motionOff = useContext(MotionPreference);
   return embedded ? (
     <section id={id} className={className} data-scroll-section aria-label={id}>
       {children}
+      <ScrollCue motionOff={motionOff} />
     </section>
   ) : (
     <Page className={className}>{children}</Page>
@@ -393,179 +372,74 @@ function ContentSection({
 
 function About({ motionOff }: { motionOff: boolean }) {
   return (
-    <Page className="about-page">
-      <div className="about-heading">
-        <LineRevealText as="h1" text="About" motionOff={motionOff} />
-        <div className="about-intro">
-          <LineRevealText text={profile.intro} motionOff={motionOff} />
-          {profile.introIsDraft && (
-            <span className="draft-label mono">INTRODUCTION / DRAFT COPY</span>
-          )}
-        </div>
-      </div>
-      <div className="about-geometry">
-        <div>
-          <MathField motionOff={motionOff} />
-        </div>
-      </div>
-      <div className="about-paths">
-        <Link to="/projects">
-          <LineRevealText as="h2" text="Projects ↗" motionOff={motionOff} />
-          <LineRevealText
-            text="Eidolon, Eidolon Atlas, Cubic, and Projector. Four projects, each with space for its own story."
-            motionOff={motionOff}
-          />
-        </Link>
-        <Link to="/gallery">
-          <LineRevealText as="h2" text="Gallery ↗" motionOff={motionOff} />
-          <LineRevealText
-            text="A collection for my photography. Original photographs will be added here."
-            motionOff={motionOff}
-          />
-        </Link>
-        <Link to="/thoughts">
-          <LineRevealText as="h2" text="Thoughts ↗" motionOff={motionOff} />
-          <LineRevealText
-            text="A notebook for thoughts, questions, and answers."
-            motionOff={motionOff}
-          />
-        </Link>
-      </div>
+    <Page className="archive-page">
+      <AboutContent motionOff={motionOff} />
     </Page>
   );
 }
-function Placeholder() {
+
+function ProjectsArchive() {
   const motionOff = useContext(MotionPreference);
   return (
-    <div className="visual-placeholder">
-      <span className="placeholder-cross" aria-hidden="true">
-        +
-      </span>
-      <LineRevealText text="Project image to be added." motionOff={motionOff} />
-    </div>
+    <Page className="archive-page">
+      <ArchiveHeading
+        title="Projects"
+        eyebrow="Work"
+        intro="A few things I’m building."
+        motionOff={motionOff}
+      />
+      <ul className="archive-list">
+        {projects.map((project) => (
+          <ArchiveRow
+            key={project.slug}
+            to={`/projects/${project.slug}`}
+            title={project.title}
+            index={project.index}
+            meta={project.description || undefined}
+            motionOff={motionOff}
+          />
+        ))}
+      </ul>
+    </Page>
   );
 }
 
+function ThoughtsArchive() {
+  const motionOff = useContext(MotionPreference);
+  return (
+    <Page className="archive-page">
+      <ArchiveHeading
+        title="Thoughts"
+        eyebrow="Questions"
+        intro="Questions I keep coming back to."
+        motionOff={motionOff}
+      />
+      <ul className="archive-list">
+        {thoughts.map((thought, index) => (
+          <ArchiveRow
+            key={thought.slug}
+            to={`/thoughts/${thought.slug}`}
+            title={thought.title}
+            index={String(index + 1).padStart(2, "0")}
+            motionOff={motionOff}
+          />
+        ))}
+      </ul>
+    </Page>
+  );
+}
 function ProjectDetail({ slug }: { slug: string }) {
   const motionOff = useContext(MotionPreference);
   const project = projects.find((p) => p.slug === slug);
   if (!project) return <NotFound />;
   const next = projects[(projects.indexOf(project) + 1) % projects.length];
   return (
-    <Page className="detail-page">
-      <section
-        className="project-detail-head"
-        style={{ "--detail-accent": project.accent } as CSSProperties}
-      >
-        <Link to="/projects" className="back-link mono">
-          ← <ScrambleText text="ALL PROJECTS" motionOff={motionOff} />
-        </Link>
-        <h1>
-          <LineRevealText
-            as="span"
-            text={project.title}
-            motionOff={motionOff}
-          />
-          <span className="detail-title-arrow" aria-hidden="true">
-            ↗
-          </span>
-        </h1>
-        <LineRevealText
-          text={project.description || "Project description to come."}
-          motionOff={motionOff}
-          className="project-deck"
-        />
-      </section>
-      <div className="detail-body">
-        {project.images.length ? (
-          project.images.map((image) => (
-            <figure className="project-image" key={image.src}>
-              <img src={image.src} alt={image.alt} loading="lazy" />
-              <LineRevealText
-                as="figcaption"
-                text={image.caption}
-                motionOff={motionOff}
-              />
-            </figure>
-          ))
-        ) : (
-          <Placeholder />
-        )}
-        <div className="project-context">
-          <div>
-            <LineRevealText as="h2" text="Context" motionOff={motionOff} />
-            <LineRevealText
-              text={
-                project.context ||
-                "The story behind this project will go here: what prompted it, what it explores, and how it took shape."
-              }
-              motionOff={motionOff}
-            />
-            {!project.context && (
-              <span className="mono content-pending">CONTENT PLACEHOLDER</span>
-            )}
-          </div>
-        </div>
-        <div className="project-context">
-          <div>
-            <LineRevealText
-              as="h2"
-              text="Technical notes."
-              motionOff={motionOff}
-            />
-            {project.technicalDetails.length ? (
-              <ul>
-                {project.technicalDetails.map((detail) => (
-                  <LineRevealText
-                    as="li"
-                    text={detail}
-                    motionOff={motionOff}
-                    key={detail}
-                  />
-                ))}
-              </ul>
-            ) : (
-              <>
-                <LineRevealText
-                  text="Architecture, tools, implementation decisions, and lessons learned will be added here."
-                  motionOff={motionOff}
-                />
-                <span className="mono content-pending">
-                  CONTENT PLACEHOLDER
-                </span>
-              </>
-            )}
-            {project.links.length > 0 && (
-              <div className="project-links">
-                {project.links.map((link) => (
-                  <a
-                    className="text-link"
-                    key={link.href}
-                    href={link.href}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <ScrambleText text={link.label} motionOff={motionOff} />{" "}
-                    <Arrow />
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      <Link to={`/projects/${next.slug}`} className="next-project">
-        <span className="mono">
-          <ScrambleText
-            text={`NEXT PROJECT / ${next.index}`}
-            motionOff={motionOff}
-          />
-        </span>
-        <span>
-          <ScrambleText text={next.title} motionOff={motionOff} />
-        </span>
-        <Arrow />
-      </Link>
+    <Page className="archive-page project-detail-page">
+      <ProjectDetailContent
+        project={project}
+        next={next}
+        motionOff={motionOff}
+      />
     </Page>
   );
 }
@@ -590,34 +464,8 @@ function Thoughts({ embedded = false }: { embedded?: boolean }) {
   const Heading = embedded ? "h2" : "h1";
   return (
     <ContentSection embedded={embedded} id="thoughts" className="thoughts-page">
-      <div className="thoughts-heading">
-        <LineRevealText as={Heading} text="Thoughts" motionOff={motionOff} />
-        <span aria-hidden="true">✳</span>
-      </div>
-      <div className="thought-index">
-        {thoughts.map((thought, i) => (
-          <Link to={`/thoughts/${thought.slug}`} key={thought.slug}>
-            <span className="mono">/{String(i + 1).padStart(2, "0")}</span>
-            <div>
-              <LineRevealText
-                as="span"
-                className="sample-label mono"
-                text={
-                  thought.isSample
-                    ? "SAMPLE / LAYOUT DEMONSTRATION"
-                    : thought.kind
-                }
-                motionOff={motionOff}
-              />
-              <h2>
-                <ScrambleText text={thought.title} motionOff={motionOff} />
-              </h2>
-              <LineRevealText text={thought.excerpt} motionOff={motionOff} />
-            </div>
-            <Arrow />
-          </Link>
-        ))}
-      </div>
+      <Heading className="sr-only">Thoughts</Heading>
+      <InfiniteThoughts motionOff={motionOff} />
     </ContentSection>
   );
 }
@@ -629,7 +477,7 @@ function ThoughtDetail({ slug }: { slug: string }) {
   return (
     <Page className="thought-detail">
       <Link to="/thoughts" className="back-link mono">
-        ← <ScrambleText text="THE NOTEBOOK" motionOff={motionOff} />
+        ← <ScrambleText text="THOUGHTS" motionOff={motionOff} />
       </Link>
       <article>
         <header>
@@ -644,11 +492,13 @@ function ThoughtDetail({ slug }: { slug: string }) {
             motionOff={motionOff}
           />
           <LineRevealText as="h1" text={thought.title} motionOff={motionOff} />
-          <LineRevealText
-            text={thought.excerpt}
-            className="article-deck"
-            motionOff={motionOff}
-          />
+          {thought.excerpt && (
+            <LineRevealText
+              text={thought.excerpt}
+              className="article-deck"
+              motionOff={motionOff}
+            />
+          )}
           {thought.isSample && (
             <LineRevealText
               text="This sample demonstrates the reading layout. It is not a piece written by John."
@@ -686,50 +536,6 @@ function ThoughtDetail({ slug }: { slug: string }) {
         </div>
       </article>
     </Page>
-  );
-}
-
-function Contact({ embedded = false }: { embedded?: boolean }) {
-  const motionOff = useContext(MotionPreference);
-  const Heading = embedded ? "h2" : "h1";
-  return (
-    <ContentSection embedded={embedded} id="contact" className="contact-page">
-      <div className="contact-heading">
-        <LineRevealText as={Heading} text="Contact" motionOff={motionOff} />
-        <Aperture petals={20} />
-      </div>
-      <div className="contact-bottom">
-        <div className="contact-list">
-          {contacts.map((contact) => (
-            <div className="contact-row" key={contact.label}>
-              <LineRevealText
-                as="span"
-                text={contact.label}
-                motionOff={motionOff}
-              />
-              {contact.href ? (
-                <a
-                  href={contact.href}
-                  target={contact.label === "Email" ? undefined : "_blank"}
-                  rel="noreferrer"
-                >
-                  <ScrambleText
-                    text={contact.value || "Connect"}
-                    motionOff={motionOff}
-                  />{" "}
-                  <Arrow />
-                </a>
-              ) : (
-                <span className="contact-placeholder mono">
-                  {contact.value || "DETAILS TO BE ADDED"}
-                  <span aria-hidden="true">↗</span>
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </ContentSection>
   );
 }
 
@@ -825,10 +631,7 @@ export default function App() {
                 element={<Home motionOff={motionOff} ready={!intro} />}
               />
               <Route path="/about" element={<About motionOff={motionOff} />} />
-              <Route
-                path="/projects"
-                element={<Navigate to="/#projects" replace />}
-              />
+              <Route path="/projects" element={<ProjectsArchive />} />
               {projects.map((p) => (
                 <Route
                   key={p.slug}
@@ -838,12 +641,21 @@ export default function App() {
               ))}
               <Route
                 path="/gallery"
-                element={<Gallery />}
+                element={
+                  <Page className="archive-page">
+                    <GalleryIndexContent motionOff={motionOff} />
+                  </Page>
+                }
               />
               <Route
-                path="/thoughts"
-                element={<Navigate to="/#thoughts" replace />}
+                path="/gallery/:folder"
+                element={
+                  <Page className="archive-page">
+                    <GalleryFolderContent motionOff={motionOff} />
+                  </Page>
+                }
               />
+              <Route path="/thoughts" element={<ThoughtsArchive />} />
               {thoughts.map((t) => (
                 <Route
                   key={t.slug}
@@ -853,17 +665,15 @@ export default function App() {
               ))}
               <Route
                 path="/contact"
-                element={<Navigate to="/#contact" replace />}
+                element={<Navigate to="/about#contact" replace />}
               />
               <Route path="*" element={<NotFound />} />
             </Routes>
-            {location.pathname !== "/gallery" && (
-              <Footer
-                motionOff={motionOff}
-                systemReduced={!!prefersReducedMotion}
-                toggleMotion={() => setManualMotionOff((value) => !value)}
-              />
-            )}
+            <Footer
+              motionOff={motionOff}
+              systemReduced={!!prefersReducedMotion}
+              toggleMotion={() => setManualMotionOff((value) => !value)}
+            />
           </div>
         </div>
         <AnimatePresence>

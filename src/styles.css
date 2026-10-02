@@ -318,9 +318,9 @@ em {
   top: 60px;
 }
 .project-aside h2 {
-  font-family: "Montserrat", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: clamp(2.75rem, 7vw, 8.5rem);
-  font-weight: 300;
+  font-weight: 200;
   line-height: 1.08;
   letter-spacing: -0.045em;
 }
@@ -592,7 +592,6 @@ em {
 }
 .gallery-page,
 .thoughts-page,
-.contact-page,
 .not-found {
   padding: 150px var(--gutter) 60px;
 }
@@ -607,7 +606,6 @@ em {
 }
 .gallery-heading h1,
 .thoughts-heading h1,
-.contact-heading h1,
 .not-found h1 {
   font-size: clamp(5rem, 12vw, 13rem);
   line-height: 0.9;
@@ -869,71 +867,6 @@ em {
 .article-end > span {
   font-size: 3rem;
 }
-.contact-page {
-  background: var(--accent);
-}
-.contact-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 60px 0;
-}
-.contact-heading h1 {
-  font-size: clamp(6rem, 17vw, 17rem);
-}
-.contact-heading h1 em {
-  margin-left: 10vw;
-}
-.contact-heading > .aperture {
-  width: 34%;
-  height: auto;
-  transform: rotate(-20deg);
-}
-.contact-bottom {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 50px;
-  margin-top: 50px;
-}
-.contact-bottom > p {
-  font-size: 1.75rem;
-  line-height: 1.4;
-  letter-spacing: -0.04em;
-}
-.contact-bottom > p > span {
-  display: inline-block;
-  margin-top: 25px;
-}
-.contact-list {
-  border-top: 1px solid var(--line);
-}
-.contact-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 30px;
-  padding: 25px 0;
-  border-bottom: 1px solid var(--line);
-}
-.contact-row > span:first-child {
-  font-size: 1.75rem;
-  letter-spacing: -0.04em;
-}
-.contact-placeholder {
-  display: flex;
-  align-items: center;
-  gap: 35px;
-  font-size: 0.75rem;
-  color: #53583b;
-}
-.contact-placeholder > span {
-  font-size: 1.75rem;
-}
-.contact-row > a {
-  display: flex;
-  gap: 25px;
-  align-items: center;
-}
 .not-found {
   min-height: 85svh;
 }
@@ -964,12 +897,6 @@ em {
   }
   .empty-exhibition {
     min-height: 470px;
-  }
-  .contact-heading {
-    padding-top: 80px;
-  }
-  .contact-placeholder {
-    gap: 15px;
   }
 }
 @media (max-width: 760px) {
@@ -1125,7 +1052,6 @@ em {
   }
   .gallery-page,
   .thoughts-page,
-  .contact-page,
   .not-found {
     padding-top: 120px;
     padding-bottom: 40px;
@@ -1347,50 +1273,6 @@ em {
   .next-project > .arrow {
     font-size: 2.3rem;
   }
-  .contact-heading {
-    padding: 50px 0 10px;
-    position: relative;
-  }
-  .contact-heading h1 {
-    font-size: 28vw;
-    position: relative;
-    z-index: 1;
-  }
-  .contact-heading h1 em {
-    margin-left: 10vw;
-  }
-  .contact-heading > .aperture {
-    position: absolute;
-    width: 45%;
-    right: -5%;
-    top: 45px;
-  }
-  .contact-bottom {
-    display: block;
-    margin-top: 50px;
-  }
-  .contact-bottom > p {
-    font-size: 1.25rem;
-    margin-bottom: 35px;
-  }
-  .contact-bottom > p > span {
-    margin-top: 15px;
-  }
-  .contact-row {
-    gap: 15px;
-    padding: 23px 0;
-  }
-  .contact-row > span:first-child {
-    font-size: 1.25rem;
-  }
-  .contact-placeholder {
-    font-size: 0.75rem;
-    gap: 20px;
-  }
-  .contact-row > a {
-    font-size: 0.85rem;
-    overflow-wrap: anywhere;
-  }
   .intro-top,
   .intro-bottom {
     font-size: 0.75rem;
@@ -1413,10 +1295,6 @@ em {
   }
   .project-aside h2 {
     font-size: 2.2rem;
-  }
-  .contact-placeholder {
-    gap: 10px;
-    font-size: 0.75rem;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1568,12 +1446,6 @@ main {
 .registration {
   background: #b5b1c7;
 }
-.contact-page {
-  background: #b2c2b7;
-}
-.contact-placeholder {
-  color: #45534b;
-}
 .thoughts-heading > span {
   animation: orbit-turn 50s linear infinite;
 }
@@ -1697,22 +1569,45 @@ main {
 }
 .quick-intro {
   position: relative;
+  --scroll-cue-color: #555b58;
   background: #d3d3d3;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: minmax(0, 63fr) minmax(0, 37fr);
+  align-items: center;
+  gap: clamp(32px, 4.5vw, 88px);
   min-height: 100svh;
   padding: clamp(48px, 8svh, 110px) var(--gutter);
 }
-.quick-intro-copy,
-.quick-intro > p {
-  max-width: 1120px;
+.quick-intro-text {
+  min-width: 0;
 }
-.quick-intro-copy,
-.quick-intro > p {
-  font-size: clamp(2rem, 4.6vw, 4.7rem);
-  line-height: 1.22;
-  letter-spacing: -0.05em;
+.quick-intro-copy {
+  font-size: clamp(1.75rem, 3vw, 3.25rem);
+  line-height: 1.25;
+  letter-spacing: -0.045em;
+}
+.intro-portrait {
+  position: relative;
+  justify-self: end;
+  width: min(100%, 52.5svh, 540px);
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: clamp(14px, 1.4vw, 24px);
+  background: #b6c5cc;
+}
+.intro-portrait img {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+.intro-portrait.is-resolved img {
+  opacity: 1;
+}
+.intro-portrait canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 .line-reveal {
   position: relative;
@@ -1778,9 +1673,6 @@ main {
 .home-page > .thoughts-page {
   --chapter-layer: 4;
 }
-.home-page > .contact-page {
-  --chapter-layer: 5;
-}
 .home-page > section:not(.math-landing):not(.project-section) {
   scroll-margin-top: 0;
 }
@@ -1792,8 +1684,7 @@ main {
   padding-top: 0;
 }
 .home-page > .gallery-page,
-.home-page > .thoughts-page,
-.home-page > .contact-page {
+.home-page > .thoughts-page {
   min-height: 100svh;
   padding-top: clamp(44px, 6svh, 64px);
   padding-bottom: clamp(44px, 6svh, 64px);
@@ -1802,24 +1693,13 @@ main {
   padding-top: clamp(40px, 5.5svh, 55px);
   padding-bottom: clamp(40px, 5.5svh, 55px);
 }
-.home-page .contact-heading {
-  padding: 15px 0;
-}
-.home-page .contact-heading > .aperture {
-  width: min(18vw, 300px);
-}
-.home-page .contact-bottom {
-  margin-top: 30px;
-}
 .gallery-heading,
-.thoughts-heading,
-.contact-heading {
+.thoughts-heading {
   padding-top: 0;
   margin-top: 0;
 }
 .gallery-heading h2,
-.thoughts-heading h2,
-.contact-heading h2 {
+.thoughts-heading h2 {
   font-size: clamp(3.5rem, 9vw, 9rem);
   line-height: 1;
   letter-spacing: -0.065em;
@@ -1830,14 +1710,6 @@ main {
 .empty-gallery-copy p {
   font-size: clamp(1.25rem, 2.4vw, 2rem);
   max-width: 350px;
-}
-.contact-bottom {
-  display: block;
-}
-.contact-list {
-  width: 100%;
-  max-width: 1000px;
-  margin-left: auto;
 }
 .text-reveal {
   opacity: 0;
@@ -1893,6 +1765,27 @@ html[data-motion="off"] .home-page > [data-scroll-section]:not(.math-landing) {
   }
 }
 @media (max-width: 760px) {
+  .quick-intro {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    align-content: center;
+    gap: clamp(24px, 3.5svh, 36px);
+    padding-top: 70px;
+    padding-bottom: 36px;
+  }
+  .intro-portrait {
+    grid-row: 1;
+    justify-self: center;
+    width: min(72vw, 28svh, 320px);
+  }
+  .quick-intro-copy {
+    font-size: clamp(1.1rem, 5vw, 1.75rem);
+    line-height: 1.3;
+    letter-spacing: -0.04em;
+  }
+  .quick-intro .text-link {
+    margin-top: 26px;
+  }
   .site-header {
     top: 12px;
     right: var(--gutter);
@@ -1908,8 +1801,7 @@ html[data-motion="off"] .home-page > [data-scroll-section]:not(.math-landing) {
   }
   .home-page > .project-section,
   .home-page > .gallery-page,
-  .home-page > .thoughts-page,
-  .home-page > .contact-page {
+  .home-page > .thoughts-page {
     padding-top: 70px;
     padding-bottom: 70px;
   }
@@ -1935,6 +1827,12 @@ main > section:focus {
   outline: none;
 }
 @media (max-width: 380px) {
+  .intro-portrait {
+    width: min(72vw, 25svh);
+  }
+  .quick-intro .text-link {
+    margin-top: 20px;
+  }
   .simple-nav {
     gap: 6px;
   }
@@ -1944,6 +1842,7 @@ main > section:focus {
 .project-section {
   min-height: 100svh;
   padding: clamp(82px, 10vh, 112px) var(--gutter) clamp(52px, 7vh, 78px);
+  --scroll-cue-color: #a9b6b6;
 }
 .home-page > .project-section {
   padding-top: clamp(82px, 10vh, 112px);
@@ -1966,7 +1865,8 @@ main > section:focus {
 .project-aside h2,
 .project-section.standalone .project-aside h2 {
   font-size: clamp(3.75rem, 7vw, 8.5rem);
-  font-weight: 300;
+  font-family: "Outfit", sans-serif;
+  font-weight: 200;
   line-height: 1;
   letter-spacing: -0.045em;
 }
@@ -2236,6 +2136,7 @@ html:has(.gallery-page--standalone) {
   isolation: isolate;
   background: #fbfbf9;
   color: #1b1d1b;
+  --scroll-cue-color: #55535e;
 }
 .gallery-page--embedded {
   height: 100svh;
@@ -2272,7 +2173,7 @@ html:has(.gallery-page--standalone) {
   will-change: transform;
   transition: opacity 0.65s ease;
 }
-.gallery-chunk {
+.gallery-rect {
   position: absolute;
   overflow: visible;
 }
@@ -2331,13 +2232,15 @@ html:has(.gallery-page--standalone) {
   }
 }
 .gallery-wordmark {
+  --wordmark-opening-size: clamp(4rem, 8.2vw, 8rem);
+  --wordmark-final-size: clamp(4.5rem, 32vw, 34rem);
   position: absolute;
   top: 50%;
   left: 50%;
   z-index: 1;
   margin: 0;
   color: rgba(27, 29, 27, 0.055);
-  font-size: clamp(4.5rem, 32vw, 34rem);
+  font-size: var(--wordmark-current-size, var(--wordmark-final-size));
   font-weight: 400;
   line-height: 0.82;
   letter-spacing: -0.105em;
@@ -2345,14 +2248,34 @@ html:has(.gallery-page--standalone) {
   pointer-events: none;
   transform: translate(-50%, -50%);
   transition:
-    font-size 1.4s cubic-bezier(0.2, 0.72, 0.24, 1),
     color 1s ease,
     opacity 1s ease;
 }
 .gallery-wordmark.is-opening {
+  --wordmark-current-size: var(--wordmark-opening-size);
   color: #1b1d1b;
-  font-size: clamp(4rem, 8.2vw, 8rem);
   opacity: 1;
+}
+.gallery-wordmark.is-enlarging {
+  --wordmark-current-size: var(--wordmark-final-size);
+  /* Keep one timeline running across the intro-to-canvas phase change. */
+  animation: wordmark-enlarge 2.35s both;
+  will-change: transform;
+}
+@keyframes wordmark-enlarge {
+  0% {
+    transform: translate(-50%, -50%) scale(var(--wordmark-opening-scale));
+    animation-timing-function: cubic-bezier(0.333333, 0, 0.666667, 0);
+  }
+  /* 950ms into the same animation; accelerate without restarting it. */
+  40.425532% {
+    transform: translate(-50%, -50%)
+      scale(calc(var(--wordmark-opening-scale) * 1.08));
+    animation-timing-function: cubic-bezier(0.2, 0.03, 0.24, 1);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 .gallery-controls {
   position: absolute;
@@ -2432,7 +2355,9 @@ html:has(.gallery-page--standalone) {
     opacity 0.35s ease,
     visibility 0.35s ease;
 }
-.site-shell:has(.gallery-page--standalone .infinite-gallery[data-phase="waiting"])
+.site-shell:has(
+    .gallery-page--standalone .infinite-gallery[data-phase="waiting"]
+  )
   .site-header,
 .site-shell:has(.gallery-page .infinite-gallery[data-phase="intro"])
   .site-header {
@@ -2475,9 +2400,146 @@ html[data-motion="off"] .gallery-grid-line.is-drawing {
     bottom: max(27px, calc(env(safe-area-inset-bottom) + 11px));
   }
   .gallery-wordmark {
-    font-size: clamp(7rem, 48vw, 13rem);
+    --wordmark-final-size: clamp(7rem, 48vw, 13rem);
   }
   .gallery-wordmark.is-opening {
-    font-size: clamp(4rem, 13vw, 5rem);
+    --wordmark-opening-size: clamp(4rem, 13vw, 5rem);
+  }
+}
+
+/* A borderless type field, measured in browser pixels for collision handling. */
+.thoughts-page {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  min-height: 100svh;
+  padding: 0 !important;
+  overflow: hidden;
+  isolation: isolate;
+  background: #0b0c0d;
+  color: #d3d3d3;
+  --scroll-cue-color: #a9b6b6;
+}
+.infinite-thoughts {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+.infinite-thoughts:focus-visible {
+  outline: 1px solid rgba(211, 211, 211, 0.3);
+  outline-offset: -7px;
+}
+.infinite-thoughts.is-dragging,
+.infinite-thoughts.is-dragging .floating-thought {
+  cursor: grabbing;
+}
+.thoughts-wordmark.gallery-wordmark {
+  --wordmark-final-size: clamp(4.5rem, 26vw, 32rem);
+  color: rgba(211, 211, 211, 0.04);
+}
+.thoughts-wordmark.gallery-wordmark.is-opening {
+  color: #d3d3d3;
+}
+.infinite-thoughts.is-still .landing-point {
+  animation: none;
+}
+.infinite-thoughts:not([data-active="true"]) .landing-point {
+  animation-play-state: paused;
+}
+.thoughts-dust {
+  transition: opacity 0.65s ease;
+}
+.infinite-thoughts[data-phase="waiting"] .thoughts-dust,
+.infinite-thoughts[data-phase="intro"] .thoughts-dust {
+  opacity: 0;
+}
+.thoughts-world {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  z-index: 2;
+  opacity: 1;
+  transition: opacity 0.65s ease;
+  pointer-events: none;
+}
+.floating-thought {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: max-content;
+  max-width: min(44vw, 540px);
+  padding: 4px 0 9px;
+  color: #d3d3d3;
+  font-size: calc(clamp(1.1rem, 1.5vw, 1.75rem) * var(--thought-scale, 1));
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.35;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: none;
+  will-change: transform;
+}
+.floating-thought::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 2px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.45s cubic-bezier(0.2, 0.72, 0.24, 1);
+}
+.floating-thought:hover::after,
+.floating-thought:focus-visible::after {
+  transform: scaleX(1);
+}
+.floating-thought:focus-visible {
+  outline: none;
+  color: #fff;
+}
+.infinite-thoughts.is-dragging .floating-thought::after {
+  transform: scaleX(0);
+}
+.infinite-thoughts[data-phase="waiting"] .thoughts-world,
+.infinite-thoughts[data-phase="intro"] .thoughts-world {
+  opacity: 0;
+  visibility: hidden;
+}
+.site-shell:has(.infinite-thoughts[data-phase="intro"]) .site-header {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+html[data-motion="off"] .thoughts-world,
+html[data-motion="off"] .thoughts-dust,
+html[data-motion="off"] .thoughts-wordmark,
+html[data-motion="off"] .floating-thought::after {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .thoughts-world,
+  .thoughts-dust,
+  .thoughts-wordmark,
+  .floating-thought::after {
+    transition: none !important;
+  }
+}
+@media (max-width: 760px) {
+  .floating-thought {
+    max-width: 75vw;
+    font-size: calc(clamp(1rem, 3.8vw, 1.3rem) * var(--thought-scale, 1));
+  }
+  .thoughts-wordmark.gallery-wordmark {
+    --wordmark-final-size: clamp(6rem, 36vw, 12rem);
+  }
+  .thoughts-wordmark.gallery-wordmark.is-opening {
+    --wordmark-opening-size: clamp(3.5rem, 13vw, 5rem);
   }
 }

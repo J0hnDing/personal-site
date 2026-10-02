@@ -7,58 +7,16 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 
-type GalleryPhoto = {
-  id: string;
-  src: string;
-  width: number;
-  height: number;
-};
+import {
+  createLayout,
+  GalleryWorld,
+  selectVisiblePhotos,
+  type GalleryCell,
+  type GalleryPhoto,
+} from "./galleryGeometry";
+import { prepareWordmarkIntro } from "./wordmarkIntro";
 
-type GalleryCell = {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  photo: GalleryPhoto | null;
-};
-
-type GridLine = {
-  id: string;
-  x: number;
-  y: number;
-  length: number;
-  direction: "horizontal" | "vertical";
-};
-
-type Rect = { x: number; y: number; width: number; height: number };
-
-type GalleryLayout = {
-  pitchX: number;
-  pitchY: number;
-  minCellSize: number;
-  maxLeafWidth: number;
-  maxLeafHeight: number;
-  maxZoom: number;
-  minPhotoWidth: number;
-  minPhotoHeight: number;
-  maxPhotoWidth: number;
-  maxPhotoHeight: number;
-};
-
-type GalleryChunk = {
-  key: string;
-  column: number;
-  row: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  cells: GalleryCell[];
-  lines: GridLine[];
-};
-
-type VisibleChunk = GalleryChunk & { animate: boolean };
+type VisibleCell = GalleryCell & { animate: boolean };
 
 type Camera = {
   x: number;
@@ -78,392 +36,7 @@ type DragState = {
 };
 
 const MIN_ZOOM = 0.72;
-const MAX_CACHED_CHUNKS = 96;
 const ASSET_MANIFEST_URL = `${import.meta.env.BASE_URL}gallery-assets/manifest.json`;
-
-function createLayout(width: number, height: number): GalleryLayout {
-  const compact = width < 700;
-  const maxZoom = compact ? 1 : 1.1;
-  return {
-    // Large regions are only a virtualization boundary. Several unrelated
-    // BSP leaves inside each region may be photographed, or none may be.
-    pitchX: Math.round(
-      compact
-        ? Math.max(620, Math.min(850, width * 2.1))
-        : Math.max(1020, Math.min(1600, width * 0.96)),
-    ),
-    pitchY: Math.round(
-      compact
-        ? Math.max(880, Math.min(1180, height * 1.2))
-        : Math.max(900, Math.min(1250, height * 1.12)),
-    ),
-    minCellSize: compact ? 55 : 78,
-    maxLeafWidth: compact ? 300 : 425,
-    maxLeafHeight: compact ? 325 : 390,
-    maxZoom,
-    minPhotoWidth: compact ? 92 : 116,
-    minPhotoHeight: compact ? 84 : 94,
-    maxPhotoWidth: compact ? 295 : 470,
-    maxPhotoHeight: compact ? 320 : 420,
-  };
-}
-
-function seededRandom(seed: number) {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) | 0;
-    let value = state;
-    value = Math.imul(value ^ (value >>> 15), value | 1);
-    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function chunkSeed(sessionSeed: number, column: number, row: number) {
-  let value = sessionSeed ^ Math.imul(column, 0x9e3779b1);
-  value = Math.imul(value ^ Math.imul(row, 0x85ebca6b), 0xc2b2ae35);
-  return (value ^ (value >>> 16)) >>> 0;
-}
-
-function axisBoundary(
-  index: number,
-  pitch: number,
-  sessionSeed: number,
-  salt: number,
-) {
-  if (index === 0) return 0;
-  const hash = chunkSeed(sessionSeed ^ salt, index, index ^ salt);
-  return index * pitch + (hash / 0xffffffff - 0.5) * pitch * 0.3;
-}
-
-function axisIndex(
-  position: number,
-  pitch: number,
-  sessionSeed: number,
-  salt: number,
-) {
-  let index = Math.floor(position / pitch);
-  while (axisBoundary(index, pitch, sessionSeed, salt) > position) index -= 1;
-  while (axisBoundary(index + 1, pitch, sessionSeed, salt) <= position)
-    index += 1;
-  return index;
-}
-
-function chunkGeometry(
-  sessionSeed: number,
-  column: number,
-  row: number,
-  layout: GalleryLayout,
-) {
-  const x = axisBoundary(column, layout.pitchX, sessionSeed, 0x673a2b1d);
-  const y = axisBoundary(row, layout.pitchY, sessionSeed, 0x2984c741);
-  const width =
-    axisBoundary(column + 1, layout.pitchX, sessionSeed, 0x673a2b1d) - x;
-  const height =
-    axisBoundary(row + 1, layout.pitchY, sessionSeed, 0x2984c741) - y;
-  return { x, y, width, height };
-}
-
-function randomInt(random: () => number, min: number, max: number) {
-  return min + Math.floor(random() * (max - min + 1));
-}
-
-function randomBetween(random: () => number, min: number, max: number) {
-  return min + random() * (max - min);
-}
-
-function makeChunk(
-  sessionSeed: number,
-  column: number,
-  row: number,
-  photos: GalleryPhoto[],
-  layout: GalleryLayout,
-): GalleryChunk {
-  const random = seededRandom(chunkSeed(sessionSeed, column, row));
-  const key = column + "," + row;
-  const { x, y, width, height } = chunkGeometry(
-    sessionSeed,
-    column,
-    row,
-    layout,
-  );
-  const cells: GalleryCell[] = [];
-  const lines: GridLine[] = [];
-  const addLine = (
-    lineX: number,
-    lineY: number,
-    length: number,
-    direction: GridLine["direction"],
-  ) => {
-    lines.push({
-      id: key + ":line:" + lines.length,
-      x: lineX,
-      y: lineY,
-      length,
-      direction,
-    });
-  };
-  const splitVertical = (rect: Rect, at: number): [Rect, Rect] => {
-    addLine(at, rect.y, rect.height, "vertical");
-    return [
-      { x: rect.x, y: rect.y, width: at - rect.x, height: rect.height },
-      {
-        x: at,
-        y: rect.y,
-        width: rect.x + rect.width - at,
-        height: rect.height,
-      },
-    ];
-  };
-  const splitHorizontal = (rect: Rect, at: number): [Rect, Rect] => {
-    addLine(rect.x, at, rect.width, "horizontal");
-    return [
-      { x: rect.x, y: rect.y, width: rect.width, height: at - rect.y },
-      {
-        x: rect.x,
-        y: at,
-        width: rect.width,
-        height: rect.y + rect.height - at,
-      },
-    ];
-  };
-
-  // A chunk boundary is a virtualization seam, not an image slot. Build the
-  // entire irregular partition before deciding which leaves receive photos.
-  addLine(0, 0, width, "horizontal");
-  addLine(0, height, width, "horizontal");
-  addLine(0, 0, height, "vertical");
-  addLine(width, 0, height, "vertical");
-
-  const leaves: Rect[] = [];
-  const subdivide = (rect: Rect, depth: number) => {
-    const canSplitX = rect.width >= layout.minCellSize * 2.15;
-    const canSplitY = rect.height >= layout.minCellSize * 2.15;
-    const aspect = rect.width / rect.height;
-    const needsSplit =
-      rect.width > layout.maxLeafWidth ||
-      rect.height > layout.maxLeafHeight ||
-      aspect > 2.2 ||
-      aspect < 0.45;
-    const largeEmpty =
-      depth >= 2 &&
-      rect.width < layout.maxLeafWidth * 1.4 &&
-      rect.height < layout.maxLeafHeight * 1.4 &&
-      random() < 0.11;
-    if (
-      depth >= 8 ||
-      (!canSplitX && !canSplitY) ||
-      largeEmpty ||
-      (!needsSplit && random() < 0.76)
-    ) {
-      leaves.push(rect);
-      return;
-    }
-
-    const xPressure = rect.width / layout.maxLeafWidth;
-    const yPressure = rect.height / layout.maxLeafHeight;
-    const vertical =
-      canSplitX &&
-      (!canSplitY ||
-        xPressure > yPressure * 1.16 ||
-        (xPressure >= yPressure * 0.84 && random() < 0.5));
-    if (vertical) {
-      const minimum = Math.max(layout.minCellSize, rect.width * 0.28);
-      const maximum = Math.min(
-        rect.width - layout.minCellSize,
-        rect.width * 0.72,
-      );
-      if (minimum < maximum) {
-        const [left, right] = splitVertical(
-          rect,
-          rect.x + randomBetween(random, minimum, maximum),
-        );
-        subdivide(left, depth + 1);
-        subdivide(right, depth + 1);
-        return;
-      }
-    } else if (canSplitY) {
-      const minimum = Math.max(layout.minCellSize, rect.height * 0.28);
-      const maximum = Math.min(
-        rect.height - layout.minCellSize,
-        rect.height * 0.72,
-      );
-      if (minimum < maximum) {
-        const [top, bottom] = splitHorizontal(
-          rect,
-          rect.y + randomBetween(random, minimum, maximum),
-        );
-        subdivide(top, depth + 1);
-        subdivide(bottom, depth + 1);
-        return;
-      }
-    }
-    leaves.push(rect);
-  };
-  subdivide({ x: 0, y: 0, width, height }, 0);
-
-  type PhotoOption = {
-    photo: GalleryPhoto;
-    rect: Rect;
-    direction: GridLine["direction"];
-    first: boolean;
-    at: number;
-  };
-  const acceptedPhotos: Rect[] = [];
-  const usedPhotos = new Set<string>();
-  const photoGroup =
-    (((column % 2) + 2) % 2) + 2 * (((row % 2) + 2) % 2);
-  const palette = photos.filter((_, index) => index % 4 === photoGroup);
-  const chunkPhotos = palette.length ? palette : photos;
-  const order = leaves.map((_, index) => index);
-  for (let index = order.length - 1; index > 0; index -= 1) {
-    const other = randomInt(random, 0, index);
-    [order[index], order[other]] = [order[other], order[index]];
-  }
-  const compact = layout.minCellSize < 70;
-  const targetPhotos = Math.max(
-    3,
-    Math.min(
-      12,
-      Math.round(
-        (width * height) /
-          (compact ? 120000 : 165000) *
-          randomBetween(random, 0.82, 1.18),
-      ),
-    ),
-  );
-  const borderGap = 7;
-  const fitsPhoto = (rect: Rect) => {
-    if (
-      rect.width < layout.minPhotoWidth ||
-      rect.height < layout.minPhotoHeight ||
-      rect.width > layout.maxPhotoWidth ||
-      rect.height > layout.maxPhotoHeight ||
-      rect.x < borderGap ||
-      rect.y < borderGap ||
-      rect.x + rect.width > width - borderGap ||
-      rect.y + rect.height > height - borderGap
-    ) {
-      return false;
-    }
-    return acceptedPhotos.every((other) => {
-      const overlapX = Math.max(
-        0,
-        Math.min(rect.x + rect.width, other.x + other.width) -
-          Math.max(rect.x, other.x),
-      );
-      const overlapY = Math.max(
-        0,
-        Math.min(rect.y + rect.height, other.y + other.height) -
-          Math.max(rect.y, other.y),
-      );
-      const gapX = Math.max(
-        0,
-        other.x - rect.x - rect.width,
-        rect.x - other.x - other.width,
-      );
-      const gapY = Math.max(
-        0,
-        other.y - rect.y - rect.height,
-        rect.y - other.y - other.height,
-      );
-      return (
-        (gapX > 2 || overlapY <= Math.min(rect.height, other.height) * 0.32) &&
-        (gapY > 2 || overlapX <= Math.min(rect.width, other.width) * 0.32)
-      );
-    });
-  };
-  const cellId = (kind: string) => key + ":" + kind + ":" + cells.length;
-
-  for (const leafIndex of order) {
-    const leaf = leaves[leafIndex];
-    if (acceptedPhotos.length >= targetPhotos || random() < 0.08) {
-      cells.push({ id: cellId("empty"), ...leaf, photo: null });
-      continue;
-    }
-
-    const options: PhotoOption[] = [];
-    for (const photo of chunkPhotos) {
-      const ratio = photo.width / photo.height;
-      const photoHeight = leaf.width / ratio;
-      if (leaf.height - photoHeight >= layout.minCellSize * 0.48) {
-        for (const first of [true, false]) {
-          const rect = {
-            x: leaf.x,
-            y: first ? leaf.y : leaf.y + leaf.height - photoHeight,
-            width: leaf.width,
-            height: photoHeight,
-          };
-          if (fitsPhoto(rect)) {
-            options.push({
-              photo,
-              rect,
-              direction: "horizontal",
-              first,
-              at: first ? leaf.y + photoHeight : rect.y,
-            });
-          }
-        }
-      }
-      const photoWidth = leaf.height * ratio;
-      if (leaf.width - photoWidth >= layout.minCellSize * 0.48) {
-        for (const first of [true, false]) {
-          const rect = {
-            x: first ? leaf.x : leaf.x + leaf.width - photoWidth,
-            y: leaf.y,
-            width: photoWidth,
-            height: leaf.height,
-          };
-          if (fitsPhoto(rect)) {
-            options.push({
-              photo,
-              rect,
-              direction: "vertical",
-              first,
-              at: first ? leaf.x + photoWidth : rect.x,
-            });
-          }
-        }
-      }
-    }
-
-    if (!options.length) {
-      cells.push({ id: cellId("empty"), ...leaf, photo: null });
-      continue;
-    }
-    const fresh = options.filter((option) => !usedPhotos.has(option.photo.id));
-    const pool = fresh.length ? fresh : options;
-    const chosen = pool[randomInt(random, 0, pool.length - 1)];
-    const [first, second] =
-      chosen.direction === "vertical"
-        ? splitVertical(leaf, chosen.at)
-        : splitHorizontal(leaf, chosen.at);
-    const imageCell = chosen.first ? first : second;
-    const emptyCell = chosen.first ? second : first;
-    cells.push({ id: cellId("photo"), ...imageCell, photo: chosen.photo });
-    cells.push({ id: cellId("empty"), ...emptyCell, photo: null });
-    acceptedPhotos.push(imageCell);
-    usedPhotos.add(chosen.photo.id);
-  }
-
-  return { key, column, row, x, y, width, height, cells, lines };
-}
-
-function rememberChunk(cache: Map<string, GalleryChunk>, chunk: GalleryChunk) {
-  cache.delete(chunk.key);
-  cache.set(chunk.key, chunk);
-  while (cache.size > MAX_CACHED_CHUNKS) {
-    const oldest = cache.keys().next().value;
-    if (oldest === undefined) break;
-    if (oldest === "0,0") {
-      const origin = cache.get(oldest)!;
-      cache.delete(oldest);
-      cache.set(oldest, origin);
-    } else {
-      cache.delete(oldest);
-    }
-  }
-}
 
 function readManifest(value: unknown): GalleryPhoto[] {
   if (!value || typeof value !== "object" || !("photos" in value)) return [];
@@ -501,9 +74,10 @@ export default function InfiniteGallery({
   const [phase, setPhase] = useState<"waiting" | "intro" | "canvas">(
     initialPhase,
   );
+  const [introStarted, setIntroStarted] = useState(false);
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
   const [photosReady, setPhotosReady] = useState(false);
-  const [visibleChunks, setVisibleChunks] = useState<VisibleChunk[]>([]);
+  const [visibleCells, setVisibleCells] = useState<VisibleCell[]>([]);
   const [dragging, setDragging] = useState(false);
   const [scrollToZoom, setScrollToZoom] = useState(false);
   const [zoomPercent, setZoomPercent] = useState(100);
@@ -522,9 +96,8 @@ export default function InfiniteGallery({
   const cameraInitializedRef = useRef(false);
   const dragRef = useRef<DragState | null>(null);
   const inertiaFrameRef = useRef(0);
-  const sessionSeedRef = useRef(Math.floor(Math.random() * 0xffffffff));
-  const chunkCacheRef = useRef(new Map<string, GalleryChunk>());
-  const seenChunksRef = useRef(new Set<string>());
+  const worldGeometryRef = useRef<GalleryWorld | null>(null);
+  const seenCellsRef = useRef(new Set<number>());
   const visibleSignatureRef = useRef("");
   const refreshRef = useRef<() => void>(() => undefined);
 
@@ -548,11 +121,12 @@ export default function InfiniteGallery({
   }, []);
 
   useEffect(() => {
-    if (phase === "canvas") return;
     if (motionOff) {
+      setIntroStarted(false);
       setPhase("canvas");
       return;
     }
+    if (phase === "canvas") return;
     if (phase === "waiting") {
       const canvas = canvasRef.current;
       if (!canvas || !window.IntersectionObserver) {
@@ -574,6 +148,8 @@ export default function InfiniteGallery({
       observer.observe(canvas);
       return () => observer.disconnect();
     }
+    prepareWordmarkIntro(canvasRef.current);
+    setIntroStarted(true);
     const timer = window.setTimeout(() => setPhase("canvas"), 950);
     return () => window.clearTimeout(timer);
   }, [motionOff, phase]);
@@ -592,30 +168,29 @@ export default function InfiniteGallery({
       camera.width = width;
       camera.height = height;
       if (phase === "canvas" && photosReady) {
-        let openingChunk = chunkCacheRef.current.get("0,0");
-        if (!openingChunk) {
-          openingChunk = makeChunk(
-            sessionSeedRef.current,
-            0,
-            0,
-            photos,
-            layout,
-          );
+        let geometry = worldGeometryRef.current;
+        if (!geometry) {
+          geometry = new GalleryWorld(photos, layout);
+          worldGeometryRef.current = geometry;
         }
-        rememberChunk(chunkCacheRef.current, openingChunk);
-        const openingPhoto = openingChunk.cells.find((cell) => cell.photo);
+        geometry.ensureCoverage({
+          x: -width / 2,
+          y: -height / 2,
+          width,
+          height,
+        });
+        const openingPhoto = geometry.cells
+          .filter((cell) => cell.photo)
+          .sort((a, b) =>
+            (a.x + a.width / 2) ** 2 + (a.y + a.height / 2) ** 2 -
+            ((b.x + b.width / 2) ** 2 + (b.y + b.height / 2) ** 2)
+          )[0];
         camera.zoom = Math.max(
           MIN_ZOOM,
           Math.min(1, width / 700, height / 450),
         );
-        const focusX = openingPhoto
-          ? openingPhoto.x + openingPhoto.width / 2
-          : layout.pitchX / 2;
-        const focusY = openingPhoto
-          ? openingPhoto.y + openingPhoto.height / 2
-          : layout.pitchY / 2;
-        camera.x = width / 2 - focusX * camera.zoom;
-        camera.y = height / 2 - focusY * camera.zoom;
+        camera.x = width / 2 - (openingPhoto ? openingPhoto.x + openingPhoto.width / 2 : 0) * camera.zoom;
+        camera.y = height / 2 - (openingPhoto ? openingPhoto.y + openingPhoto.height / 2 : 0) * camera.zoom;
         setZoomPercent(Math.round(camera.zoom * 100));
         cameraInitializedRef.current = true;
       }
@@ -635,63 +210,39 @@ export default function InfiniteGallery({
     const worldTop = -camera.y / camera.zoom;
     const worldRight = (width - camera.x) / camera.zoom;
     const worldBottom = (height - camera.y) / camera.zoom;
-    const bufferX = Math.min(
-      layout.pitchX * 0.46,
-      (width / camera.zoom) * 0.18,
+    let geometry = worldGeometryRef.current;
+    if (!geometry) {
+      geometry = new GalleryWorld(photos, layout);
+      worldGeometryRef.current = geometry;
+    }
+    const viewport = {
+      x: worldLeft,
+      y: worldTop,
+      width: worldRight - worldLeft,
+      height: worldBottom - worldTop,
+    };
+    geometry.ensureCoverage(viewport);
+    const buffer = 300;
+    const visible = selectVisiblePhotos(
+      geometry.query({
+        x: worldLeft - buffer,
+        y: worldTop - buffer,
+        width: viewport.width + buffer * 2,
+        height: viewport.height + buffer * 2,
+      }),
+      viewport,
     );
-    const bufferY = Math.min(
-      layout.pitchY * 0.46,
-      (height / camera.zoom) * 0.18,
-    );
-    const firstColumn = axisIndex(
-      worldLeft - bufferX,
-      layout.pitchX,
-      sessionSeedRef.current,
-      0x673a2b1d,
-    );
-    const lastColumn = axisIndex(
-      worldRight + bufferX,
-      layout.pitchX,
-      sessionSeedRef.current,
-      0x673a2b1d,
-    );
-    const firstRow = axisIndex(
-      worldTop - bufferY,
-      layout.pitchY,
-      sessionSeedRef.current,
-      0x2984c741,
-    );
-    const lastRow = axisIndex(
-      worldBottom + bufferY,
-      layout.pitchY,
-      sessionSeedRef.current,
-      0x2984c741,
-    );
-    const signature = `${firstColumn}:${lastColumn}:${firstRow}:${lastRow}:${photos.length}`;
+    const signature = visible
+      .map((cell) => `${cell.id}:${cell.photo?.id ?? ""}`)
+      .join(",");
     if (signature === visibleSignatureRef.current) return;
     visibleSignatureRef.current = signature;
 
-    const next: VisibleChunk[] = [];
-    for (let row = firstRow; row <= lastRow; row += 1) {
-      for (let column = firstColumn; column <= lastColumn; column += 1) {
-        const key = `${column},${row}`;
-        let chunk = chunkCacheRef.current.get(key);
-        if (!chunk) {
-          chunk = makeChunk(
-            sessionSeedRef.current,
-            column,
-            row,
-            photos,
-            layout,
-          );
-        }
-        rememberChunk(chunkCacheRef.current, chunk);
-        const animate = !seenChunksRef.current.has(key);
-        seenChunksRef.current.add(key);
-        next.push({ ...chunk, animate });
-      }
-    }
-    setVisibleChunks(next);
+    setVisibleCells(visible.map((cell) => {
+      const animate = !seenCellsRef.current.has(cell.id);
+      seenCellsRef.current.add(cell.id);
+      return { ...cell, animate };
+    }));
   }, [layout, phase, photos, photosReady]);
 
   refreshRef.current = refreshVisibleChunks;
@@ -707,26 +258,23 @@ export default function InfiniteGallery({
       const nextLayout = createLayout(width, height);
       if (
         nextLayout.maxZoom !== layout.maxZoom ||
-        nextLayout.pitchX !== layout.pitchX ||
-        nextLayout.pitchY !== layout.pitchY
+        nextLayout.minimum !== layout.minimum
       ) {
         const camera = cameraRef.current;
         if (cameraInitializedRef.current) {
-          const tileX =
-            (camera.width / 2 - camera.x) / camera.zoom / layout.pitchX;
-          const tileY =
-            (camera.height / 2 - camera.y) / camera.zoom / layout.pitchY;
+          const centerX = (camera.width / 2 - camera.x) / camera.zoom;
+          const centerY = (camera.height / 2 - camera.y) / camera.zoom;
           camera.zoom = Math.min(camera.zoom, nextLayout.maxZoom);
-          camera.x = width / 2 - tileX * nextLayout.pitchX * camera.zoom;
-          camera.y = height / 2 - tileY * nextLayout.pitchY * camera.zoom;
+          camera.x = width / 2 - centerX * camera.zoom;
+          camera.y = height / 2 - centerY * camera.zoom;
           camera.width = width;
           camera.height = height;
           setZoomPercent(Math.round(camera.zoom * 100));
         }
-        chunkCacheRef.current.clear();
-        seenChunksRef.current.clear();
+        worldGeometryRef.current = null;
+        seenCellsRef.current.clear();
         visibleSignatureRef.current = "";
-        setVisibleChunks([]);
+        setVisibleCells([]);
         setLayout(nextLayout);
         return;
       }
@@ -885,50 +433,48 @@ export default function InfiniteGallery({
       tabIndex={0}
     >
       <div ref={worldRef} className="gallery-world">
-        {visibleChunks.map((chunk) => (
+        {visibleCells.map((cell) => (
           <div
-            className="gallery-chunk"
-            key={chunk.key}
+            className="gallery-rect"
+            key={cell.id}
             style={{
-              left: chunk.x,
-              top: chunk.y,
-              width: chunk.width,
-              height: chunk.height,
+              left: cell.x,
+              top: cell.y,
+              width: cell.width,
+              height: cell.height,
             }}
           >
-            {chunk.cells.map((cell) =>
-              cell.photo ? (
-                <img
-                  key={cell.id}
-                  className={`gallery-photo${chunk.animate ? " is-entering" : ""}`}
-                  src={cell.photo.src}
-                  alt={`Photograph ${cell.photo.id.replaceAll("_", " ")}`}
-                  decoding="async"
-                  draggable={false}
-                  style={
-                    {
-                      left: cell.x,
-                      top: cell.y,
-                      width: cell.width,
-                      height: cell.height,
-                      "--photo-delay": `${120 + (cell.y % 4) * 32}ms`,
-                    } as CSSProperties
-                  }
-                />
-              ) : null,
-            )}
-            {chunk.lines.map((line, index) => (
-              <span
-                aria-hidden="true"
-                className={`gallery-grid-line ${line.direction}${chunk.animate ? " is-drawing" : ""}`}
-                key={line.id}
+            {cell.photo && cell.photoFrame && (
+              <img
+                className={`gallery-photo${cell.animate ? " is-entering" : ""}`}
+                src={cell.photo.src}
+                alt={`Photograph ${cell.photo.id.replaceAll("_", " ")}`}
+                decoding="async"
+                draggable={false}
                 style={
                   {
-                    left: line.x,
-                    top: line.y,
-                    width: line.direction === "horizontal" ? line.length : 1,
-                    height: line.direction === "vertical" ? line.length : 1,
-                    "--line-delay": `${(index % 12) * 24}ms`,
+                    left: cell.photoFrame.x - cell.x,
+                    top: cell.photoFrame.y - cell.y,
+                    width: cell.photoFrame.width,
+                    height: cell.photoFrame.height,
+                    objectFit: "contain",
+                    "--photo-delay": "120ms",
+                  } as CSSProperties
+                }
+              />
+            )}
+            {(["top", "right", "bottom", "left"] as const).map((side, index) => (
+              <span
+                aria-hidden="true"
+                className={`gallery-grid-line ${side === "top" || side === "bottom" ? "horizontal" : "vertical"}${cell.animate ? " is-drawing" : ""}`}
+                key={side}
+                style={
+                  {
+                    left: side === "right" ? cell.width : 0,
+                    top: side === "bottom" ? cell.height : 0,
+                    width: side === "top" || side === "bottom" ? cell.width : 1,
+                    height: side === "left" || side === "right" ? cell.height : 1,
+                    "--line-delay": `${index * 24}ms`,
                   } as CSSProperties
                 }
               />
@@ -938,7 +484,7 @@ export default function InfiniteGallery({
       </div>
 
       <div
-        className={`gallery-wordmark${phase === "canvas" ? " is-watermark" : " is-opening"}`}
+        className={`gallery-wordmark${phase === "canvas" ? " is-watermark" : " is-opening"}${introStarted && !motionOff ? " is-enlarging" : ""}`}
         aria-hidden="true"
       >
         Gallery

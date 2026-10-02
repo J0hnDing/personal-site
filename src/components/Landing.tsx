@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   motion,
   useScroll,
@@ -6,6 +6,7 @@ import {
   type MotionValue,
 } from "motion/react";
 import MathField from "./MathField";
+import ScrollCue from "./ScrollCue";
 import ScrambleText from "./ScrambleText";
 import { profile } from "../content";
 import "./landing.css";
@@ -20,6 +21,7 @@ const roles = [
 const nameRevealDuration = 1.15;
 const firstNameDelay = 1.35;
 const surnameDelay = 2.35;
+const heroEntranceSeenKey = "john-landing-name-seen-v1";
 export const supportingRevealDelay = surnameDelay + nameRevealDuration;
 
 type RoleIconKind = (typeof roles)[number]["icon"];
@@ -110,6 +112,13 @@ export default function Landing({
   motionOff: boolean;
   ready?: boolean;
 }) {
+  const [shouldRevealEntrance] = useState(() => {
+    try {
+      return !sessionStorage.getItem(heroEntranceSeenKey);
+    } catch {
+      return true;
+    }
+  });
   const [firstName, ...surname] = profile.name.split(" ");
   const displayFirstName = firstName.toUpperCase();
   const displaySurname = surname.join(" ").toUpperCase();
@@ -128,6 +137,18 @@ export default function Landing({
     [0, 0.08, 0.18],
     [1, 1, 0],
   );
+  const entranceRevealActive = shouldRevealEntrance && !motionOff;
+  const entranceVisible = ready || !shouldRevealEntrance;
+
+  useEffect(() => {
+    if (!ready || !shouldRevealEntrance) return;
+
+    try {
+      sessionStorage.setItem(heroEntranceSeenKey, "true");
+    } catch {
+      /* The name reveal still works when storage is unavailable. */
+    }
+  }, [ready, shouldRevealEntrance]);
 
   return (
     <section
@@ -144,11 +165,11 @@ export default function Landing({
         </div>
         <motion.div
           className="landing-field"
-          initial={motionOff ? false : { opacity: 0 }}
-          animate={{ opacity: ready ? 1 : 0 }}
+          initial={entranceRevealActive ? { opacity: 0 } : false}
+          animate={{ opacity: entranceVisible ? 1 : 0 }}
           transition={{
-            duration: motionOff ? 0 : 1.25,
-            delay: motionOff ? 0 : supportingRevealDelay,
+            duration: entranceRevealActive ? 1.25 : 0,
+            delay: entranceRevealActive ? supportingRevealDelay : 0,
             ease: [0.22, 1, 0.36, 1],
           }}
         >
@@ -165,11 +186,11 @@ export default function Landing({
               <span className="landing-name-line">
                 <motion.span
                   aria-hidden="true"
-                  initial={motionOff ? false : { y: "112%" }}
-                  animate={{ y: ready ? "0%" : "112%" }}
+                  initial={entranceRevealActive ? { y: "112%" } : false}
+                  animate={{ y: entranceVisible ? "0%" : "112%" }}
                   transition={{
-                    duration: motionOff ? 0 : nameRevealDuration,
-                    delay: motionOff ? 0 : firstNameDelay,
+                    duration: entranceRevealActive ? nameRevealDuration : 0,
+                    delay: entranceRevealActive ? firstNameDelay : 0,
                     ease: [0.12, 0.95, 0.18, 1],
                   }}
                 >
@@ -179,11 +200,11 @@ export default function Landing({
               <span className="landing-name-line">
                 <motion.span
                   aria-hidden="true"
-                  initial={motionOff ? false : { y: "112%" }}
-                  animate={{ y: ready ? "0%" : "112%" }}
+                  initial={entranceRevealActive ? { y: "112%" } : false}
+                  animate={{ y: entranceVisible ? "0%" : "112%" }}
                   transition={{
-                    duration: motionOff ? 0 : nameRevealDuration,
-                    delay: motionOff ? 0 : surnameDelay,
+                    duration: entranceRevealActive ? nameRevealDuration : 0,
+                    delay: entranceRevealActive ? surnameDelay : 0,
                     ease: [0.12, 0.95, 0.18, 1],
                   }}
                 >
@@ -212,11 +233,11 @@ export default function Landing({
 
         <motion.div
           className="landing-figure-control mono"
-          initial={motionOff ? false : { opacity: 0 }}
-          animate={{ opacity: ready ? 1 : 0 }}
+          initial={entranceRevealActive ? { opacity: 0 } : false}
+          animate={{ opacity: entranceVisible ? 1 : 0 }}
           transition={{
-            duration: motionOff ? 0 : 0.8,
-            delay: motionOff ? 0 : supportingRevealDelay,
+            duration: entranceRevealActive ? 0.8 : 0,
+            delay: entranceRevealActive ? supportingRevealDelay : 0,
           }}
         >
           <div
@@ -240,13 +261,7 @@ export default function Landing({
           </button>
         </motion.div>
 
-        <motion.div
-          className="landing-scroll-cue"
-          style={motionOff ? undefined : { opacity: scrollCueOpacity }}
-          aria-hidden="true"
-        >
-          <span />
-        </motion.div>
+        <ScrollCue motionOff={motionOff} opacity={scrollCueOpacity} />
       </div>
     </section>
   );

@@ -100,7 +100,7 @@ export default function CursorMark({ motionOff = false }: CursorMarkProps) {
     const setHovered = (target: EventTarget | null) => {
       if (
         target instanceof Element &&
-        target.closest(".infinite-gallery")
+        target.closest(".infinite-gallery, .infinite-thoughts")
       ) {
         hide();
         return;
@@ -112,7 +112,7 @@ export default function CursorMark({ motionOff = false }: CursorMarkProps) {
       if (paused || event.pointerType !== "mouse") return;
       if (
         event.target instanceof Element &&
-        event.target.closest(".infinite-gallery")
+        event.target.closest(".infinite-gallery, .infinite-thoughts")
       ) {
         hide();
         return;
