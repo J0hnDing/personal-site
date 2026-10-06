@@ -15,8 +15,11 @@ import {
   type GalleryPhoto,
 } from "./galleryGeometry";
 import { prepareWordmarkIntro } from "./wordmarkIntro";
+import GalleryPhotoViewer from "./GalleryPhotoViewer";
+import { useAvailableOriginal, useGalleryPreload } from "./useGalleryOriginals";
+import { galleryOriginalCache } from "./galleryOriginalCache";
 
-type VisibleCell = GalleryCell & { animate: boolean };
+type VisibleCell = GalleryCell & { animate: boolean; inViewport: boolean };
 
 type Camera = {
   x: number;
@@ -33,9 +36,14 @@ type DragState = {
   lastTime: number;
   velocityX: number;
   velocityY: number;
+  startX: number;
+  startY: number;
+  moved: boolean;
+  photo: GalleryPhoto | null;
+  trigger: HTMLElement | null;
 };
 
-const MIN_ZOOM = 0.72;
+const MIN_ZOOM = 0.5;
 const ASSET_MANIFEST_URL = `${import.meta.env.BASE_URL}gallery-assets/manifest.json`;
 
 function readManifest(value: unknown): GalleryPhoto[] {
@@ -59,7 +67,13 @@ function readManifest(value: unknown): GalleryPhoto[] {
     const source = photo.src.startsWith("/")
       ? photo.src
       : `${import.meta.env.BASE_URL}${photo.src.replace(/^\/+/, "")}`;
-    return [{ ...(photo as GalleryPhoto), src: source }];
+    const fullSrc =
+      typeof photo.fullSrc === "string"
+        ? photo.fullSrc.startsWith("/")
+          ? photo.fullSrc
+          : `${import.meta.env.BASE_URL}${photo.fullSrc}`
+        : undefined;
+    return [{ ...(photo as GalleryPhoto), src: source, fullSrc }];
   });
 }
 
@@ -77,10 +91,13 @@ export default function InfiniteGallery({
   const [introStarted, setIntroStarted] = useState(false);
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
   const [photosReady, setPhotosReady] = useState(false);
+  const [onScreen, setOnScreen] = useState(false);
   const [visibleCells, setVisibleCells] = useState<VisibleCell[]>([]);
   const [dragging, setDragging] = useState(false);
   const [scrollToZoom, setScrollToZoom] = useState(false);
   const [zoomPercent, setZoomPercent] = useState(100);
+  const [activePhoto, setActivePhoto] = useState<GalleryPhoto | null>(null);
+  const photoTriggerRef = useRef<HTMLElement | null>(null);
   const [layout, setLayout] = useState(() =>
     createLayout(window.innerWidth, window.innerHeight),
   );
@@ -95,11 +112,41 @@ export default function InfiniteGallery({
   });
   const cameraInitializedRef = useRef(false);
   const dragRef = useRef<DragState | null>(null);
+  const suppressPhotoClickRef = useRef(false);
+  const pendingPhotoClickRef = useRef<{
+    photo: GalleryPhoto;
+    trigger: HTMLElement | null;
+  } | null>(null);
   const inertiaFrameRef = useRef(0);
   const worldGeometryRef = useRef<GalleryWorld | null>(null);
   const seenCellsRef = useRef(new Set<number>());
   const visibleSignatureRef = useRef("");
   const refreshRef = useRef<() => void>(() => undefined);
+
+  useGalleryPreload(photos);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    if (!window.IntersectionObserver) {
+      setOnScreen(true);
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      setOnScreen(entries.some((entry) => entry.isIntersecting));
+    });
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (onScreen)
+      galleryOriginalCache.prioritize(
+        visibleCells.flatMap((cell) =>
+          cell.inViewport && cell.photo?.fullSrc ? [cell.photo.fullSrc] : [],
+        ),
+      );
+  }, [visibleCells, onScreen]);
 
   useEffect(() => {
     let active = true;
@@ -181,16 +228,24 @@ export default function InfiniteGallery({
         });
         const openingPhoto = geometry.cells
           .filter((cell) => cell.photo)
-          .sort((a, b) =>
-            (a.x + a.width / 2) ** 2 + (a.y + a.height / 2) ** 2 -
-            ((b.x + b.width / 2) ** 2 + (b.y + b.height / 2) ** 2)
+          .sort(
+            (a, b) =>
+              (a.x + a.width / 2) ** 2 +
+              (a.y + a.height / 2) ** 2 -
+              ((b.x + b.width / 2) ** 2 + (b.y + b.height / 2) ** 2),
           )[0];
         camera.zoom = Math.max(
           MIN_ZOOM,
           Math.min(1, width / 700, height / 450),
         );
-        camera.x = width / 2 - (openingPhoto ? openingPhoto.x + openingPhoto.width / 2 : 0) * camera.zoom;
-        camera.y = height / 2 - (openingPhoto ? openingPhoto.y + openingPhoto.height / 2 : 0) * camera.zoom;
+        camera.x =
+          width / 2 -
+          (openingPhoto ? openingPhoto.x + openingPhoto.width / 2 : 0) *
+            camera.zoom;
+        camera.y =
+          height / 2 -
+          (openingPhoto ? openingPhoto.y + openingPhoto.height / 2 : 0) *
+            camera.zoom;
         setZoomPercent(Math.round(camera.zoom * 100));
         cameraInitializedRef.current = true;
       }
@@ -232,17 +287,24 @@ export default function InfiniteGallery({
       }),
       viewport,
     );
+    const inViewport = (cell: GalleryCell) =>
+      cell.x < worldRight &&
+      cell.x + cell.width > worldLeft &&
+      cell.y < worldBottom &&
+      cell.y + cell.height > worldTop;
     const signature = visible
-      .map((cell) => `${cell.id}:${cell.photo?.id ?? ""}`)
+      .map((cell) => `${cell.id}:${cell.photo?.id ?? ""}:${inViewport(cell)}`)
       .join(",");
     if (signature === visibleSignatureRef.current) return;
     visibleSignatureRef.current = signature;
 
-    setVisibleCells(visible.map((cell) => {
-      const animate = !seenCellsRef.current.has(cell.id);
-      seenCellsRef.current.add(cell.id);
-      return { ...cell, animate };
-    }));
+    setVisibleCells(
+      visible.map((cell) => {
+        const animate = !seenCellsRef.current.has(cell.id);
+        seenCellsRef.current.add(cell.id);
+        return { ...cell, animate, inViewport: inViewport(cell) };
+      }),
+    );
   }, [layout, phase, photos, photosReady]);
 
   refreshRef.current = refreshVisibleChunks;
@@ -337,13 +399,25 @@ export default function InfiniteGallery({
     refreshRef.current();
   };
 
+  const openPhoto = (photo: GalleryPhoto, trigger: HTMLElement | null) => {
+    cancelAnimationFrame(inertiaFrameRef.current);
+    photoTriggerRef.current = trigger;
+    setActivePhoto(photo);
+  };
+
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (phase !== "canvas") return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
-    if (event.target instanceof Element && event.target.closest("button, a")) {
+    const button =
+      event.target instanceof Element
+        ? event.target.closest<HTMLElement>("button, a")
+        : null;
+    if (button && !button.hasAttribute("data-gallery-photo")) {
       return;
     }
     cancelAnimationFrame(inertiaFrameRef.current);
+    suppressPhotoClickRef.current = false;
+    pendingPhotoClickRef.current = null;
     dragRef.current = {
       pointerId: event.pointerId,
       lastX: event.clientX,
@@ -351,6 +425,13 @@ export default function InfiniteGallery({
       lastTime: event.timeStamp,
       velocityX: 0,
       velocityY: 0,
+      startX: event.clientX,
+      startY: event.clientY,
+      moved: false,
+      photo:
+        photos.find((photo) => photo.id === button?.dataset.galleryPhoto) ??
+        null,
+      trigger: button,
     };
     event.currentTarget.setPointerCapture(event.pointerId);
     setDragging(true);
@@ -359,6 +440,12 @@ export default function InfiniteGallery({
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
+    if (
+      !drag.moved &&
+      Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 6
+    )
+      return;
+    drag.moved = true;
     const deltaX = event.clientX - drag.lastX;
     const deltaY = event.clientY - drag.lastY;
     const elapsed = Math.max(1, event.timeStamp - drag.lastTime);
@@ -377,6 +464,22 @@ export default function InfiniteGallery({
     if (!drag || drag.pointerId !== event.pointerId) return;
     dragRef.current = null;
     setDragging(false);
+    suppressPhotoClickRef.current =
+      drag.moved || event.type === "pointercancel";
+    // A drag can still emit a click; allow independent later activations.
+    window.setTimeout(() => {
+      suppressPhotoClickRef.current = false;
+    }, 0);
+    if (event.currentTarget.hasPointerCapture(event.pointerId))
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    if (event.type === "pointercancel" || !drag.moved) {
+      if (event.type !== "pointercancel" && drag.photo)
+        pendingPhotoClickRef.current = {
+          photo: drag.photo,
+          trigger: drag.trigger,
+        };
+      return;
+    }
 
     let velocityX = Math.max(-2.6, Math.min(2.6, drag.velocityX));
     let velocityY = Math.max(-2.6, Math.min(2.6, drag.velocityY));
@@ -419,97 +522,163 @@ export default function InfiniteGallery({
   };
 
   return (
-    <div
-      ref={canvasRef}
-      className={`infinite-gallery${dragging ? " is-dragging" : ""}`}
-      data-phase={phase}
-      data-lenis-prevent={scrollToZoom || dragging ? "" : undefined}
-      aria-label="Infinite photo gallery. Drag to pan, or use the arrow keys."
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      onKeyDown={handleKeyDown}
-      tabIndex={0}
-    >
-      <div ref={worldRef} className="gallery-world">
-        {visibleCells.map((cell) => (
-          <div
-            className="gallery-rect"
-            key={cell.id}
-            style={{
-              left: cell.x,
-              top: cell.y,
-              width: cell.width,
-              height: cell.height,
-            }}
-          >
-            {cell.photo && cell.photoFrame && (
-              <img
-                className={`gallery-photo${cell.animate ? " is-entering" : ""}`}
-                src={cell.photo.src}
-                alt={`Photograph ${cell.photo.id.replaceAll("_", " ")}`}
-                decoding="async"
-                draggable={false}
-                style={
-                  {
-                    left: cell.photoFrame.x - cell.x,
-                    top: cell.photoFrame.y - cell.y,
-                    width: cell.photoFrame.width,
-                    height: cell.photoFrame.height,
-                    objectFit: "contain",
-                    "--photo-delay": "120ms",
-                  } as CSSProperties
-                }
-              />
-            )}
-            {(["top", "right", "bottom", "left"] as const).map((side, index) => (
-              <span
-                aria-hidden="true"
-                className={`gallery-grid-line ${side === "top" || side === "bottom" ? "horizontal" : "vertical"}${cell.animate ? " is-drawing" : ""}`}
-                key={side}
-                style={
-                  {
-                    left: side === "right" ? cell.width : 0,
-                    top: side === "bottom" ? cell.height : 0,
-                    width: side === "top" || side === "bottom" ? cell.width : 1,
-                    height: side === "left" || side === "right" ? cell.height : 1,
-                    "--line-delay": `${index * 24}ms`,
-                  } as CSSProperties
-                }
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-
+    <>
       <div
-        className={`gallery-wordmark${phase === "canvas" ? " is-watermark" : " is-opening"}${introStarted && !motionOff ? " is-enlarging" : ""}`}
-        aria-hidden="true"
+        ref={canvasRef}
+        className={`infinite-gallery${dragging ? " is-dragging" : ""}`}
+        data-phase={phase}
+        data-lenis-prevent={scrollToZoom || dragging ? "" : undefined}
+        aria-label="Infinite photo gallery. Drag to pan, or use the arrow keys."
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onClick={() => {
+          const pending = pendingPhotoClickRef.current;
+          pendingPhotoClickRef.current = null;
+          if (pending) openPhoto(pending.photo, pending.trigger);
+        }}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
       >
-        Gallery
-      </div>
+        <div ref={worldRef} className="gallery-world">
+          {visibleCells.map((cell) => (
+            <div
+              className="gallery-rect"
+              key={cell.id}
+              style={{
+                left: cell.x,
+                top: cell.y,
+                width: cell.width,
+                height: cell.height,
+              }}
+            >
+              {cell.photo && cell.photoFrame && (
+                <button
+                  type="button"
+                  className="gallery-photo-open"
+                  data-gallery-photo={cell.photo.id}
+                  tabIndex={cell.inViewport ? 0 : -1}
+                  aria-label={`Enlarge photograph ${cell.photo.id.replaceAll("_", " ")}`}
+                  onClick={(event) => {
+                    pendingPhotoClickRef.current = null;
+                    if (
+                      cell.photo &&
+                      (event.detail === 0 || !suppressPhotoClickRef.current)
+                    )
+                      openPhoto(cell.photo, event.currentTarget);
+                  }}
+                >
+                  <CanvasPhoto
+                    photo={cell.photo}
+                    animate={cell.animate}
+                    useOriginal={onScreen && cell.inViewport}
+                  />
+                </button>
+              )}
+              {(["top", "right", "bottom", "left"] as const).map(
+                (side, index) => (
+                  <span
+                    aria-hidden="true"
+                    className={`gallery-grid-line ${side === "top" || side === "bottom" ? "horizontal" : "vertical"}${cell.animate ? " is-drawing" : ""}`}
+                    key={side}
+                    style={
+                      {
+                        left: side === "right" ? cell.width : 0,
+                        top: side === "bottom" ? cell.height : 0,
+                        width:
+                          side === "top" || side === "bottom" ? cell.width : 1,
+                        height:
+                          side === "left" || side === "right" ? cell.height : 1,
+                        "--line-delay": `${index * 24}ms`,
+                      } as CSSProperties
+                    }
+                  />
+                ),
+              )}
+            </div>
+          ))}
+        </div>
 
-      <div className="gallery-controls">
-        <button
-          className="gallery-zoom-toggle mono"
-          type="button"
-          aria-pressed={scrollToZoom}
-          onClick={() => setScrollToZoom((enabled) => !enabled)}
+        <div
+          className={`gallery-wordmark${phase === "canvas" ? " is-watermark" : " is-opening"}${introStarted && !motionOff ? " is-enlarging" : ""}`}
+          aria-hidden="true"
         >
-          <span className="zoom-toggle-mark" aria-hidden="true">
-            {scrollToZoom ? "●" : "○"}
+          Gallery
+        </div>
+
+        <div className="gallery-controls">
+          <button
+            className="gallery-zoom-toggle mono"
+            type="button"
+            aria-pressed={scrollToZoom}
+            onClick={() => setScrollToZoom((enabled) => !enabled)}
+          >
+            <span className="zoom-toggle-mark" aria-hidden="true">
+              {scrollToZoom ? "●" : "○"}
+            </span>
+            <span>Scroll to zoom</span>
+            <span className="zoom-toggle-state">
+              {scrollToZoom ? "ON" : "OFF"}
+            </span>
+            {scrollToZoom && <span className="zoom-level">{zoomPercent}%</span>}
+          </button>
+          <span className="gallery-pan-hint mono" aria-hidden="true">
+            DRAG TO MOVE
           </span>
-          <span>Scroll to zoom</span>
-          <span className="zoom-toggle-state">
-            {scrollToZoom ? "ON" : "OFF"}
-          </span>
-          {scrollToZoom && <span className="zoom-level">{zoomPercent}%</span>}
-        </button>
-        <span className="gallery-pan-hint mono" aria-hidden="true">
-          DRAG TO MOVE
-        </span>
+        </div>
       </div>
-    </div>
+      <GalleryPhotoViewer
+        motionOff={motionOff}
+        photo={activePhoto}
+        onClose={() => setActivePhoto(null)}
+        triggerRef={photoTriggerRef}
+        fallbackRef={canvasRef}
+      />
+    </>
+  );
+}
+
+function CanvasPhoto({
+  photo,
+  animate,
+  useOriginal,
+}: {
+  photo: GalleryPhoto;
+  animate: boolean;
+  useOriginal: boolean;
+}) {
+  const original = useAvailableOriginal(photo.fullSrc, useOriginal);
+  const [failedOriginal, setFailedOriginal] = useState<string>();
+  return (
+    <img
+      className={`gallery-photo${animate ? " is-entering" : ""}`}
+      src={original && original !== failedOriginal ? original : photo.src}
+      alt={`Photograph ${photo.id.replaceAll("_", " ")}`}
+      decoding="async"
+      draggable={false}
+      onError={() => {
+        if (original && photo.fullSrc) {
+          setFailedOriginal(original);
+          void galleryOriginalCache.invalidate(photo.fullSrc);
+        }
+      }}
+      onLoad={async (event) => {
+        if (!original || !photo.fullSrc) return;
+        const image = event.currentTarget;
+        await image.decode().catch(() => undefined);
+        galleryOriginalCache.markDecoded(photo.fullSrc, image);
+      }}
+      style={
+        {
+          left: 0,
+          top: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "fill",
+          "--photo-delay": "120ms",
+        } as CSSProperties
+      }
+    />
   );
 }

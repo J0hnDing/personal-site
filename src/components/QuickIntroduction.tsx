@@ -22,15 +22,25 @@ function PixelPortrait({
     const image = imageRef.current;
     const canvas = canvasRef.current;
     if (!image || !canvas || motionOff) return;
-    const context = canvas.getContext("2d");
+    // Keep the resampled surfaces CPU-backed. Copying a freshly resized GPU
+    // canvas into another canvas caused synchronous stalls on the first reveal.
+    const context = canvas.getContext("2d", {
+      willReadFrequently: true,
+    });
     const sample = document.createElement("canvas");
-    const sampleContext = sample.getContext("2d");
+    const sampleContext = sample.getContext("2d", {
+      alpha: false,
+      willReadFrequently: true,
+    });
     if (!context || !sampleContext) {
       setResolved(true);
       return;
     }
     let frame = 0;
     let active = true;
+    let finished = false;
+    let width = 0;
+    let height = 0;
 
     const draw = () => {
       if (!active || !image.complete || !image.naturalWidth) return;
@@ -40,18 +50,15 @@ function PixelPortrait({
             (performance.now() - reveal.startedAt) / reveal.durationMs,
           )
         : 0;
-      const { width, height } = canvas.getBoundingClientRect();
       if (!width || !height) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const pixelWidth = Math.round(width * dpr);
-      const pixelHeight = Math.round(height * dpr);
-      if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
-      if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
-      if (resolved || progress >= 1) {
+      if (progress >= 1) {
         // Keep the same surface for the final frame: no canvas/image paint gap.
         context.imageSmoothingEnabled = true;
         context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        if (!resolved) setResolved(true);
+        if (!finished) {
+          finished = true;
+          setResolved(true);
+        }
         return;
       }
       // Refine continuously from 24px cells to full resolution in 800ms.
@@ -75,11 +82,20 @@ function PixelPortrait({
       cancelAnimationFrame(frame);
       draw();
     };
+    const resize = () => {
+      ({ width, height } = canvas.getBoundingClientRect());
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const pixelWidth = Math.round(width * dpr);
+      const pixelHeight = Math.round(height * dpr);
+      if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
+      if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
+      resume();
+    };
     image.addEventListener("load", resume);
     document.addEventListener("visibilitychange", resume);
-    const resizeObserver = new ResizeObserver(resume);
+    const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(canvas);
-    draw();
+    resize();
     return () => {
       active = false;
       cancelAnimationFrame(frame);
@@ -87,7 +103,7 @@ function PixelPortrait({
       image.removeEventListener("load", resume);
       document.removeEventListener("visibilitychange", resume);
     };
-  }, [motionOff, reveal, resolved]);
+  }, [motionOff, reveal]);
 
   return (
     <figure

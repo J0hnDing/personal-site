@@ -40,6 +40,9 @@
   animation: landing-point-float 7s ease-in-out infinite alternate;
   animation-delay: var(--point-delay);
 }
+.landing-points.is-still .landing-point {
+  animation: none;
+}
 .landing-point:nth-child(1) {
   --point-left: 9%;
   --point-top: 18%;

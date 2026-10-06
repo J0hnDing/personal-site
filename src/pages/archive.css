@@ -9,6 +9,16 @@
   padding: clamp(130px, 14svh, 180px) var(--gutter) 100px;
 }
 
+.has-floating-dust {
+  position: relative;
+  isolation: isolate;
+}
+
+.has-floating-dust > .archive-page-dust {
+  position: fixed;
+  z-index: -1;
+}
+
 .archive-heading,
 .archive-list,
 .archive-about-intro,
@@ -203,7 +213,14 @@
   background: rgba(0, 0, 0, 0.9);
 }
 
-.archive-photo-dialog-content > img {
+.archive-original-frame {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+}
+.archive-original-frame > img {
+  display: block;
   margin-inline: auto;
   max-width: 100%;
   max-height: 70svh;

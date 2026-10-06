@@ -51,7 +51,8 @@ test("recursive real folders preserve root IDs and avoid duplicate filename coll
   assert.equal(manifest.photos.length, 5);
   assert.equal(new Set(manifest.photos.map((entry) => entry.id)).size, 5);
   assert.equal(new Set(manifest.photos.map((entry) => entry.src)).size, 5);
-  assert.deepEqual(manifest.photos[0], {
+  const { fullSrc, ...rootPhoto } = manifest.photos[0];
+  assert.deepEqual(rootPhoto, {
     id: "DSC_001",
     src: "gallery-assets/DSC_001.webp",
     width: 30,
@@ -59,6 +60,11 @@ test("recursive real folders preserve root IDs and avoid duplicate filename coll
     name: "DSC_001.jpg",
     folderId: "all-photographs",
   });
+  assert.match(
+    fullSrc,
+    /^gallery-assets\/__originals__\/[a-f0-9]{64}\.jpg\?v=[a-z0-9]+-[a-z0-9]+$/,
+  );
+  assert.equal(new Set(manifest.photos.map((entry) => entry.fullSrc)).size, 5);
   const root = manifest.folders.find((entry) => entry.id === "all-photographs");
   assert.deepEqual(root.photoIds, ["DSC_001"]);
   const nested = manifest.folders.find(
@@ -86,6 +92,7 @@ test("recursive real folders preserve root IDs and avoid duplicate filename coll
   );
   const parsed = parseGalleryManifest(manifest, "/portfolio/");
   assert.equal(parsed.photos[0].src, "/portfolio/gallery-assets/DSC_001.webp");
+  assert.equal(parsed.photos[0].fullSrc, `/portfolio/${fullSrc}`);
 });
 
 test("same-stem root extensions stay collision-safe and cache each relative source independently", async (t) => {
@@ -162,4 +169,50 @@ test("missing source folder produces an empty archive", async (t) => {
   const manifest = await prepareGallery(options);
   assert.deepEqual(manifest.photos, []);
   assert.deepEqual(manifest.folders, []);
+});
+
+test("full-resolution files preserve originals and recover independently of previews", async (t) => {
+  const options = await fixture(t);
+  await photo(options.sourceDirectory, "Large.jpg", 2400, 1600);
+  await photo(options.sourceDirectory, "Full.tiff", 2200, 1400);
+  const first = await prepareGallery(options);
+  const entry = first.photos.find((photo) => photo.id === "Large");
+  const record = first.records["Large.jpg"];
+  const original = path.join(options.outputDirectory, record.fullOutput);
+  assert.deepEqual(
+    await readFile(original),
+    await readFile(path.join(options.sourceDirectory, "Large.jpg")),
+  );
+  const preview = path.join(options.outputDirectory, record.output);
+  assert.equal((await sharp(await readFile(preview)).metadata()).width, 1800);
+  assert.equal((await sharp(await readFile(original)).metadata()).width, 2400);
+  assert.deepEqual([entry.width, entry.height], [2400, 1600]);
+  const tiffRecord = first.records["Full.tiff"];
+  const decoded = await sharp(
+    await readFile(path.join(options.outputDirectory, tiffRecord.fullOutput)),
+  ).metadata();
+  assert.equal(decoded.format, "png");
+  assert.deepEqual([decoded.width, decoded.height], [2200, 1400]);
+  const before = await stat(preview);
+  const originalBefore = await stat(original);
+  await prepareGallery(options);
+  assert.equal((await stat(original)).mtimeMs, originalBefore.mtimeMs);
+  await unlink(original);
+  await prepareGallery(options);
+  assert.equal((await stat(preview)).mtimeMs, before.mtimeMs);
+  assert.deepEqual(
+    await readFile(original),
+    await readFile(path.join(options.sourceDirectory, "Large.jpg")),
+  );
+  const originalUrl = first.photos.find(
+    (photo) => photo.id === "Large",
+  ).fullSrc;
+  await unlink(path.join(options.sourceDirectory, "Large.jpg"));
+  await photo(options.sourceDirectory, "Large.jpg", 2600, 1600);
+  const revised = await prepareGallery(options);
+  assert.notEqual(
+    revised.photos.find((photo) => photo.id === "Large").fullSrc,
+    originalUrl,
+  );
+  assert.equal((await sharp(await readFile(original)).metadata()).width, 2600);
 });

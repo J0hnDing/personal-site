@@ -8,6 +8,7 @@ import {
 import MathField from "./MathField";
 import ScrollCue from "./ScrollCue";
 import ScrambleText from "./ScrambleText";
+import FloatingDust from "./FloatingDust";
 import { profile } from "../content";
 import "./landing.css";
 
@@ -65,7 +66,6 @@ const figures = [
   { label: "FIBERS OF S³", study: "HOPF FIBRATION / S³ → S²" },
   { label: "KNOTTED CONTINUITY", study: "(2,3) TORUS KNOT / t ∈ [0, 2π]" },
   { label: "ONE-SIDED CONTINUITY", study: "MÖBIUS WEAVE / u ∈ [0, 4π]" },
-  { label: "POSSIBLE SINGULARITY", study: "NAVIER–STOKES / VORTEX STRETCHING" },
   {
     label: "DETERMINISTIC CHAOS",
     study: "LORENZ ATTRACTOR / σ = 10, ρ = 28, β = 8/3",
@@ -158,11 +158,7 @@ export default function Landing({
       className={`math-landing${motionOff ? " is-still" : ""}`}
     >
       <div className="landing-stage">
-        <div className="landing-points" aria-hidden="true">
-          {Array.from({ length: 18 }, (_, index) => (
-            <span className="landing-point" key={index} />
-          ))}
-        </div>
+        <FloatingDust />
         <motion.div
           className="landing-field"
           initial={entranceRevealActive ? { opacity: 0 } : false}

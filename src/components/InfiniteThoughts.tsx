@@ -8,6 +8,7 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import { thoughts } from "../content";
+import FloatingDust from "./FloatingDust";
 import { ThoughtWorld, limitThoughtVelocity } from "./thoughtGeometry";
 import { ThoughtCamera, edgePanSpeed, stepThoughtScene } from "./thoughtCamera";
 import { prepareWordmarkIntro } from "./wordmarkIntro";
@@ -424,11 +425,7 @@ export default function InfiniteThoughts({
         }
       }}
     >
-      <div className="landing-points thoughts-dust" aria-hidden="true">
-        {Array.from({ length: 18 }, (_, index) => (
-          <span className="landing-point" key={index} />
-        ))}
-      </div>
+      <FloatingDust className="thoughts-dust" motionOff={motionOff} />
       <div
         className={`thoughts-wordmark gallery-wordmark${phase === "canvas" ? " is-watermark" : " is-opening"}${introStarted && !motionOff ? " is-enlarging" : ""}`}
         aria-hidden="true"

@@ -26,15 +26,17 @@ export default function SmoothScroll({ disabled }: { disabled: boolean }) {
     let resizeFrame = 0;
     let lenis: Lenis;
 
-    const boundaryPosition = (sectionIndex: number) => {
-      const section = sections[sectionIndex];
-      const documentTop = homeSectionTop(section)!;
-      // The tall landing ends on its last full viewport. Every later chapter
-      // starts at the top of the viewport in both scroll directions.
-      return sectionIndex === 0
-        ? documentTop + section.offsetHeight - window.innerHeight
-        : documentTop;
-    };
+    const measureBoundaries = () =>
+      sections.map((section, index) => ({
+        // The tall landing ends on its last full viewport. Every later chapter
+        // starts at the top of the viewport in both scroll directions.
+        position:
+          homeSectionTop(section)! +
+          (index === 0 ? section.offsetHeight - window.innerHeight : 0),
+        index,
+      }));
+    // Layout reads belong to setup/resize, not the wheel/touch input path.
+    let boundaries = measureBoundaries();
 
     const block = (event: WheelEvent | TouchEvent) => {
       if (event.cancelable) event.preventDefault();
@@ -85,10 +87,6 @@ export default function SmoothScroll({ disabled }: { disabled: boolean }) {
         const current = lenis.targetScroll;
         const destination = current + deltaY;
         const direction = Math.sign(deltaY);
-        const boundaries = sections.map((_section, index) => ({
-          position: boundaryPosition(index),
-          index,
-        }));
         const candidates = boundaries.filter(({ position }) =>
           deltaY > 0
             ? position > current + 0.5 && position <= destination
@@ -122,8 +120,9 @@ export default function SmoothScroll({ disabled }: { disabled: boolean }) {
     const realignBlockedBoundary = () => {
       window.cancelAnimationFrame(resizeFrame);
       resizeFrame = window.requestAnimationFrame(() => {
+        boundaries = measureBoundaries();
         if (!blockedBoundary) return;
-        const position = boundaryPosition(blockedBoundary.sectionIndex);
+        const position = boundaries[blockedBoundary.sectionIndex].position;
         blockedBoundary.position = position;
         lenis.scrollTo(position, { immediate: true, force: true });
       });

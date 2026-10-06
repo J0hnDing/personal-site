@@ -29,7 +29,7 @@ const CODE_TOKENS = [
   "∞",
 ] as const;
 const PALETTE = ["#a8b5a4", "#aaa5c1", "#d8d6cd", "#8299a0"];
-const FIGURE_COUNT = 5;
+const FIGURE_COUNT = 4;
 
 const clamp = (value: number, min = 0, max = 1) =>
   Math.min(max, Math.max(min, value));
@@ -38,17 +38,6 @@ const hash = (value: number) => {
   const x = Math.sin(value * 91.173 + 17.719) * 43758.5453;
   return x - Math.floor(x);
 };
-
-function blendHex(first: string, second: string, amount: number) {
-  const mixChannel = (offset: number) => {
-    const from = Number.parseInt(first.slice(offset, offset + 2), 16);
-    const to = Number.parseInt(second.slice(offset, offset + 2), 16);
-    return Math.round(from + (to - from) * amount)
-      .toString(16)
-      .padStart(2, "0");
-  };
-  return "#" + mixChannel(1) + mixChannel(3) + mixChannel(5);
-}
 
 function drawCodeField(
   context: CanvasRenderingContext2D,
@@ -146,7 +135,7 @@ function project(
   };
 }
 
-type FigureKind = 0 | 1 | 2 | 3 | 4;
+type FigureKind = 0 | 1 | 2 | 3;
 
 function createLorenzPoints() {
   const points: Point3[] = [];
@@ -169,8 +158,9 @@ function createLorenzPoints() {
     if (step > 900) {
       points.push({
         x: x / 22,
-        y: y / 29,
-        z: (z - 25) / 24,
+        // Face the butterfly's x/z plane toward the viewer.
+        y: (25 - z) / 29,
+        z: y / 58,
       });
     }
   }
@@ -179,7 +169,6 @@ function createLorenzPoints() {
 }
 
 const LORENZ_POINTS = createLorenzPoints();
-const FLOW_PALETTE = ["#86c1c5", "#8299b8", "#aaa5c1", "#c29b78"];
 
 function closedFigurePoint(
   figure: 0 | 1 | 2,
@@ -233,29 +222,6 @@ function closedFigurePoint(
   };
 }
 
-function navierStokesPoint(
-  amount: number,
-  fiberPosition: number,
-  elapsed: number,
-  still: boolean,
-): Point3 {
-  const seed = hash(fiberPosition * 97.3 + 0.4);
-  const phase = fiberPosition * TAU;
-  const vertical = (amount - 0.5) * 2.9;
-  const endDistance = Math.abs(amount - 0.5) * 2;
-  const radius =
-    (0.16 + Math.pow(endDistance, 1.35) * 0.36) * (0.94 + seed * 0.12);
-  const theta =
-    phase + amount * TAU * (0.82 + seed * 0.08) + (still ? 0 : elapsed * 0.075);
-  const bend = Math.sin(amount * Math.PI) * 0.12;
-
-  return {
-    x: radius * Math.cos(theta) + bend,
-    y: vertical,
-    z: radius * Math.sin(theta) + Math.sin(vertical + phase) * 0.025,
-  };
-}
-
 function lorenzPoint(
   amount: number,
   fiberPosition: number,
@@ -265,59 +231,16 @@ function lorenzPoint(
     fiberCount <= 1 ? 0 : Math.round(fiberPosition * (fiberCount - 1));
   const trajectoryAmount =
     fiberCount <= 1 ? amount : (fiberIndex + amount) / fiberCount;
-  const index = Math.min(
-    LORENZ_POINTS.length - 1,
-    Math.floor(trajectoryAmount * (LORENZ_POINTS.length - 1)),
-  );
+  const sample = clamp(trajectoryAmount) * (LORENZ_POINTS.length - 1);
+  const index = Math.floor(sample);
   const source = LORENZ_POINTS[index] ?? { x: 0, y: 0, z: 0 };
-  return source;
-}
-
-function drawLorenzAttractor(
-  context: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  elapsed: number,
-  pointerX: number,
-  pointerY: number,
-  scroll: number,
-  still: boolean,
-  opacity: number,
-) {
-  const compact = width < 520;
-  const centerX = compact
-    ? width * 0.31
-    : width * (width > height * 1.25 ? 0.54 : 0.5);
-  const centerY = height * (compact ? 0.56 : 0.58);
-  const scale = Math.min(width, height) * (compact ? 0.17 : 0.36);
-  const xAngle =
-    0.2 + pointerY * 0.12 + (still ? 0 : Math.sin(elapsed * 0.19) * 0.06);
-  const yAngle = -0.36 + pointerX * 0.15 + (still ? 0 : elapsed * 0.045);
-  const zAngle = -0.08 + scroll * 0.3;
-
-  context.save();
-  context.lineCap = "round";
-  context.lineJoin = "round";
-  context.globalCompositeOperation = "screen";
-  context.globalAlpha = opacity;
-  context.beginPath();
-
-  for (let index = 0; index < LORENZ_POINTS.length; index += 1) {
-    const source = LORENZ_POINTS[index];
-    if (!source) continue;
-    const point = rotatePoint(source, xAngle, yAngle, zAngle);
-    const projected = project(point, centerX, centerY, scale);
-    if (index === 0) context.moveTo(projected.x, projected.y);
-    else context.lineTo(projected.x, projected.y);
-  }
-
-  context.strokeStyle = `${PALETTE[1]}a8`;
-  context.lineWidth = 0.78;
-  context.stroke();
-  context.globalAlpha = opacity * 0.25;
-  context.lineWidth = 3.2;
-  context.stroke();
-  context.restore();
+  const next = LORENZ_POINTS[index + 1] ?? source;
+  const mix = sample - index;
+  return {
+    x: source.x + (next.x - source.x) * mix,
+    y: source.y + (next.y - source.y) * mix,
+    z: source.z + (next.z - source.z) * mix,
+  };
 }
 
 function orientedFigurePoint(
@@ -341,28 +264,26 @@ function orientedFigurePoint(
           scroll,
           still,
         )
-      : figure === 3
-        ? navierStokesPoint(amount, fiberPosition, elapsed, still)
-        : lorenzPoint(amount, fiberPosition, fiberCount);
+      : lorenzPoint(amount, fiberPosition, fiberCount);
 
   const moving = still ? 0 : elapsed;
-  const xAngles = [0.14, 0.92, 0.92, 0.12, 0.2];
-  const yAngles = [-0.16, -0.34, -0.34, -0.3, -0.36];
-  const zAngles = [0.08, -0.12, -0.12, Math.PI / 4, -0.08];
-  const rotationRates = [0.035, 0.09, 0.07, 0, 0.045];
-  const scaleFactors = [0.76, 0.92, 0.88, 0.93, 1];
+  const xAngles = [0.14, 0.92, 0.92, 0.2];
+  const yAngles = [-0.16, -0.34, -0.34, -0.2];
+  const zAngles = [0.08, -0.12, -0.12, -0.08];
+  const rotationRates = [0.035, 0.09, 0.07, 0];
+  const scaleFactors = [0.76, 0.92, 0.88, 1.05];
   const xAngle =
     (xAngles[figure] ?? 0) +
-    pointerY * (figure === 3 ? 0.1 : figure === 4 ? 0.12 : 0.15) +
+    pointerY * (figure === 3 ? 0.12 : 0.15) +
     (still ? 0 : Math.sin(elapsed * 0.19) * 0.06);
   const yAngle =
     (yAngles[figure] ?? 0) +
-    pointerX * (figure === 3 || figure === 4 ? 0.15 : 0.18) +
+    pointerX * (figure === 3 ? 0.15 : 0.18) +
     moving * (rotationRates[figure] ?? 0) +
-    (still || figure !== 3 ? 0 : Math.sin(elapsed * 0.13) * 0.08);
+    (still || figure !== 3 ? 0 : Math.sin(elapsed * 0.16) * 0.12);
   const zAngle =
     (zAngles[figure] ?? 0) +
-    scroll * (figure === 3 ? 0.24 : figure === 4 ? 0.3 : 0.4) +
+    scroll * (figure === 3 ? 0.3 : 0.4) +
     (still || figure >= 3 ? 0 : elapsed * 0.025);
   const rotated = rotatePoint(source, xAngle, yAngle, zAngle);
   const scale = scaleFactors[figure] ?? 1;
@@ -385,12 +306,11 @@ function drawOrbit(
   figure: number,
   still: boolean,
 ) {
-  const standardCenterX = width * (width > height * 1.25 ? 0.54 : 0.5);
-  const standardCenterY = height * 0.56;
-  const standardScale = Math.min(width, height) * 0.34;
-  const fiberCounts = width < 520 ? [22, 22, 22, 12, 1] : [34, 34, 34, 18, 1];
-  const segmentCounts =
-    width < 520 ? [170, 170, 170, 210, 700] : [220, 220, 220, 260, 1000];
+  const centerX = width * (width > height * 1.25 ? 0.54 : 0.5);
+  const centerY = height * 0.56;
+  const scale = Math.min(width, height) * 0.34;
+  const fibers = width < 520 ? 22 : 34;
+  const segments = width < 520 ? 250 : 220;
   const from = Math.floor(figure);
   const rawMix = figure - from;
   const mix = rawMix * rawMix * (3 - 2 * rawMix);
@@ -398,49 +318,6 @@ function drawOrbit(
     FIGURE_COUNT) as FigureKind;
   const toKind = ((((from + 1) % FIGURE_COUNT) + FIGURE_COUNT) %
     FIGURE_COUNT) as FigureKind;
-  const lorenzTransition = fromKind === 4 || toKind === 4;
-  const lorenzAmount = lorenzTransition ? (fromKind === 4 ? 1 - mix : mix) : 0;
-
-  if (fromKind === 4 && rawMix < 0.001) {
-    drawLorenzAttractor(
-      context,
-      width,
-      height,
-      elapsed,
-      pointerX,
-      pointerY,
-      scroll,
-      still,
-      1,
-    );
-    return;
-  }
-
-  const nonLorenzKind = fromKind === 4 ? toKind : fromKind;
-
-  const fibers = lorenzTransition
-    ? (fiberCounts[nonLorenzKind] ?? 34)
-    : Math.round(
-        (fiberCounts[fromKind] ?? 34) +
-          ((fiberCounts[toKind] ?? 34) - (fiberCounts[fromKind] ?? 34)) * mix,
-      );
-  const segments = lorenzTransition
-    ? Math.ceil((LORENZ_POINTS.length - 1) / fibers)
-    : Math.round(
-        (segmentCounts[fromKind] ?? 220) +
-          ((segmentCounts[toKind] ?? 220) - (segmentCounts[fromKind] ?? 220)) *
-            mix,
-      );
-  const flowMix = fromKind === 3 ? 1 - mix : toKind === 3 ? mix : 0;
-  const compact = width < 520;
-  const lorenzCenterX = compact ? width * 0.31 : standardCenterX;
-  const lorenzCenterY = height * (compact ? 0.56 : 0.58);
-  const lorenzScale = Math.min(width, height) * (compact ? 0.17 : 0.36);
-  const centerX =
-    standardCenterX + (lorenzCenterX - standardCenterX) * lorenzAmount;
-  const centerY =
-    standardCenterY + (lorenzCenterY - standardCenterY) * lorenzAmount;
-  const scale = standardScale + (lorenzScale - standardScale) * lorenzAmount;
 
   context.save();
   context.lineCap = "round";
@@ -448,10 +325,8 @@ function drawOrbit(
   context.globalCompositeOperation = "screen";
 
   for (let fiber = 0; fiber < fibers; fiber += 1) {
-    const fiberPosition = fibers === 1 ? 0.5 : fiber / Math.max(1, fibers - 1);
-    const baseColor = PALETTE[fiber % PALETTE.length] ?? "#a8b5a4";
-    const flowColor = FLOW_PALETTE[fiber % FLOW_PALETTE.length] ?? "#86c1c5";
-    const color = blendHex(baseColor, flowColor, flowMix);
+    const fiberPosition = fiber / (fibers - 1);
+    const color = PALETTE[fiber % PALETTE.length] ?? "#a8b5a4";
     context.beginPath();
 
     for (let step = 0; step <= segments; step += 1) {
@@ -489,31 +364,13 @@ function drawOrbit(
     }
 
     context.strokeStyle =
-      blendHex(color, PALETTE[1] ?? "#aaa5c1", lorenzAmount) +
-      (lorenzAmount > 0.9
-        ? "a8"
-        : still
-          ? "a8"
-          : fiber % 7 === 0
-            ? "88"
-            : "55");
-    context.lineWidth =
-      (fiber % 7 === 0 ? 1.35 : 0.72) * (1 - lorenzAmount) +
-      0.78 * lorenzAmount;
+      color + (still ? "a8" : fiber % 7 === 0 ? "88" : "55");
+    context.lineWidth = fiber % 7 === 0 ? 1.35 : 0.72;
     context.stroke();
-
-    if (lorenzAmount > 0.001) {
-      context.save();
-      context.globalAlpha = lorenzAmount * 0.25;
-      context.strokeStyle = `${PALETTE[1]}a8`;
-      context.lineWidth = 3.2;
-      context.stroke();
-      context.restore();
-    }
   }
 
-  if (!still && lorenzAmount < 0.999) {
-    context.globalAlpha = 0.42 * (1 - lorenzAmount);
+  if (!still) {
+    context.globalAlpha = 0.42;
     for (let index = 0; index < 72; index += 1) {
       const amount = hash(index * 1.19);
       const fiberPosition = hash(index * 3.47);
@@ -604,8 +461,22 @@ export default function MathField({
 }: MathFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const displayedFigure = useRef(figure);
+  const targetFigure = useRef(figure);
+  targetFigure.current = figure;
+  const redrawStill = useRef<(() => void) | null>(null);
   const contoursEnabled = useRef(contours);
   contoursEnabled.current = contours;
+
+  useEffect(() => {
+    if (
+      !motionOff &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+    displayedFigure.current = figure;
+    // Static mode has no animation loop, so request one redraw for a new figure.
+    redrawStill.current?.();
+  }, [figure, motionOff]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -615,14 +486,13 @@ export default function MathField({
 
     const reducedQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     let reduced = motionOff || reducedQuery.matches;
-    const targetFigure = figure;
-    if (reduced) displayedFigure.current = targetFigure;
+    if (reduced) displayedFigure.current = targetFigure.current;
     let width = 0;
     let height = 0;
     let visible = true;
     let raf = 0;
     let lastFrame = 0;
-    let startedAt = performance.now();
+    const startedAt = performance.now();
     let pointerTargetX = 0;
     let pointerTargetY = 0;
     let pointerX = 0;
@@ -638,7 +508,7 @@ export default function MathField({
       canvas.width = Math.round(nextWidth * dpr);
       canvas.height = Math.round(nextHeight * dpr);
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      draw(performance.now(), true);
+      draw(performance.now());
     };
 
     const draw = (now: number, forceStill = false) => {
@@ -686,12 +556,17 @@ export default function MathField({
       raf = 0;
       if (!visible || document.hidden || reduced) return;
       if (now - lastFrame >= FRAME_INTERVAL) {
-        pointerX += (pointerTargetX - pointerX) * 0.065;
-        pointerY += (pointerTargetY - pointerY) * 0.065;
+        const delta = lastFrame
+          ? Math.min(now - lastFrame, 64)
+          : FRAME_INTERVAL;
+        const pointerMix = 1 - Math.exp(-delta / 370);
+        pointerX += (pointerTargetX - pointerX) * pointerMix;
+        pointerY += (pointerTargetY - pointerY) * pointerMix;
         displayedFigure.current +=
-          (targetFigure - displayedFigure.current) * 0.055;
-        if (Math.abs(targetFigure - displayedFigure.current) < 0.001) {
-          displayedFigure.current = targetFigure;
+          (targetFigure.current - displayedFigure.current) *
+          (1 - Math.exp(-delta / 280));
+        if (Math.abs(targetFigure.current - displayedFigure.current) < 0.001) {
+          displayedFigure.current = targetFigure.current;
         }
         draw(now);
         lastFrame = now;
@@ -727,12 +602,14 @@ export default function MathField({
       reduced = motionOff || reducedQuery.matches;
       if (reduced) {
         stop();
+        displayedFigure.current = targetFigure.current;
         draw(performance.now(), true);
       } else {
-        startedAt = performance.now();
         start();
       }
     };
+
+    redrawStill.current = () => draw(performance.now(), true);
 
     const resizeObserver = new ResizeObserver(resize);
     const intersectionObserver = new IntersectionObserver(([entry]) => {
@@ -756,8 +633,9 @@ export default function MathField({
       window.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("visibilitychange", onVisibility);
       reducedQuery.removeEventListener("change", onMotionPreference);
+      redrawStill.current = null;
     };
-  }, [figure, motionOff, progress, variant]);
+  }, [motionOff, progress, variant]);
 
   return (
     <canvas

@@ -10,6 +10,7 @@ import {
   type GalleryManifest,
 } from "../galleryManifest";
 import { ArchiveHeading, ArchiveRow } from "./ArchiveLayout";
+import { useOriginalCache } from "../components/useGalleryOriginals";
 
 function useGalleryManifest() {
   const [manifest, setManifest] = useState<GalleryManifest | null>(null);
@@ -125,6 +126,22 @@ function PhotographImage({
 }) {
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const cache = useOriginalCache();
+  const originalKey = photo.fullSrc ?? photo.src;
+  const original = enlarged ? cache.getSource(originalKey) : undefined;
+  const [loading, setLoading] = useState(!cache.isDecoded(originalKey));
+  useEffect(() => {
+    if (!enlarged) return;
+    let active = true;
+    const lease = cache.acquire(originalKey);
+    void lease.promise.catch(() => {
+      if (active) setFailed(true);
+    });
+    return () => {
+      active = false;
+      lease.release();
+    };
+  }, [enlarged, cache, originalKey, attempt]);
   if (failed)
     return (
       <div className="archive-photo-error" role="status">
@@ -132,8 +149,10 @@ function PhotographImage({
         <button
           type="button"
           className="archive-text-button"
-          onClick={(event) => {
+          onClick={async (event) => {
             event.stopPropagation();
+            setLoading(true);
+            await cache.invalidate(originalKey);
             setFailed(false);
             setAttempt((value) => value + 1);
           }}
@@ -143,16 +162,31 @@ function PhotographImage({
       </div>
     );
   return (
-    <img
-      key={attempt}
-      src={photo.src}
-      width={photo.width}
-      height={photo.height}
-      alt={`Photograph ${photo.name.replace(/\.[^.]+$/, "")}`}
-      loading={enlarged ? "eager" : "lazy"}
-      decoding="async"
-      onError={() => setFailed(true)}
-    />
+    <div className="archive-original-frame">
+      <img
+        key={attempt}
+        src={original ?? photo.src}
+        width={photo.width}
+        height={photo.height}
+        alt={`Photograph ${photo.name.replace(/\.[^.]+$/, "")}`}
+        loading={enlarged ? "eager" : "lazy"}
+        decoding="async"
+        onLoad={async (event) => {
+          if (!original) return;
+          const image = event.currentTarget;
+          await image.decode().catch(() => undefined);
+          cache.markDecoded(originalKey, image);
+          setLoading(false);
+        }}
+        onError={() => setFailed(true)}
+      />
+      {enlarged && loading && (
+        <div className="gallery-viewer-status" role="status">
+          <span className="gallery-viewer-spinner" aria-hidden="true" />
+          <span className="sr-only">Loading full-resolution photograph…</span>
+        </div>
+      )}
+    </div>
   );
 }
 

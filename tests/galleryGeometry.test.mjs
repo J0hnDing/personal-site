@@ -7,16 +7,24 @@ const source = readFileSync(
   new URL("../src/components/galleryGeometry.ts", import.meta.url),
   "utf8",
 );
-const javascript = ts.transpileModule(`${source}\nexport { chunkTiles };`, {
-  compilerOptions: {
-    module: ts.ModuleKind.ESNext,
-    target: ts.ScriptTarget.ES2022,
+const javascript = ts.transpileModule(
+  `${source}\nexport { chunkTiles, sharedPhotoSidePenalty };`,
+  {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
   },
-}).outputText;
-const { createLayout, GalleryWorld, chunkTiles, selectVisiblePhotos } =
-  await import(
-    `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`
-  );
+).outputText;
+const {
+  createLayout,
+  GalleryWorld,
+  chunkTiles,
+  selectVisiblePhotos,
+  sharedPhotoSidePenalty,
+} = await import(
+  `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`
+);
 const photos = [
   [3, 2],
   [2, 3],
@@ -30,6 +38,49 @@ const photos = [
   height,
 }));
 const EPS = 0.00001;
+
+test("shared photo sides receive a soft increasing cost, while corners and gaps do not", () => {
+  const picture = { x: 0, y: 0, width: 3, height: 3 };
+  const contacts = [
+    { x: 3, y: 0, width: 2, height: 1 },
+    { x: -2, y: 0, width: 2, height: 1 },
+    { x: 0, y: 3, width: 1, height: 2 },
+    { x: 0, y: -2, width: 1, height: 2 },
+  ];
+  for (const short of contacts) {
+    const long =
+      short.x === 3 || short.x === -2
+        ? { ...short, height: 2 }
+        : { ...short, width: 2 };
+    const small = sharedPhotoSidePenalty(picture, [short]);
+    const large = sharedPhotoSidePenalty(picture, [long]);
+    assert.ok(small > 0 && Number.isFinite(large));
+    assert.ok(large > small);
+    assert.equal(sharedPhotoSidePenalty(short, [picture]), small);
+  }
+  assert.equal(
+    sharedPhotoSidePenalty(picture, [
+      { x: 3, y: 3, width: 2, height: 2 },
+      { x: 3.01, y: 0, width: 2, height: 3 },
+      { x: 0, y: 3.01, width: 3, height: 2 },
+    ]),
+    0,
+  );
+  assert.ok(
+    sharedPhotoSidePenalty(picture, contacts) >
+      sharedPhotoSidePenalty(picture, [contacts[0]]),
+  );
+  const world = new GalleryWorld(collection, createLayout(1920, 1080), 42);
+  world.ensureCoverage({ x: -4000, y: -4000, width: 8000, height: 8000 });
+  const placed = world.cells.filter((cell) => cell.photo);
+  assert.ok(
+    placed.some(
+      (cell, index) =>
+        sharedPhotoSidePenalty(cell, placed.slice(index + 1)) > 0,
+    ),
+    "touching was turned into a strict prohibition",
+  );
+});
 
 // Check every horizontal slab induced by real rectangle edges. Its sorted x
 // intervals must cover the whole view exactly once, including chunk boundaries.
@@ -170,8 +221,11 @@ test("seeded geometry and photographs are independent of exploration order", () 
 });
 
 test("all collinear edge runs terminate within the declared finite bound", () => {
-  for (const seed of [0, 42, 4135253260]) {
-    const world = new GalleryWorld([], createLayout(1920, 953), seed);
+  for (const [seed, images] of [0, 42, 4135253260].flatMap((seed) => [
+    [seed, []],
+    [seed, collection],
+  ])) {
+    const world = new GalleryWorld(images, createLayout(1920, 953), seed);
     const view = { x: -4200, y: -4200, width: 8400, height: 8400 };
     world.ensureCoverage(view);
     const cells = world.query(view);
@@ -266,8 +320,8 @@ test("empty/invalid photo lists still tile and invalid dimensions fail clearly",
 const collection = Array.from({ length: 48 }, (_, index) => ({
   id: `collection-${index}`,
   src: `collection-${index}.webp`,
-  width: index % 3 === 0 ? 2 : index % 3 === 1 ? 3 : 1,
-  height: index % 3 === 0 ? 3 : index % 3 === 1 ? 2 : 1,
+  width: [2, 3, 1, 16, 9, 8][index % 6],
+  height: [3, 2, 1, 9, 16, 5][index % 6],
 }));
 
 test("larger photos preserve aspect ratio and have similar, immutable displayed areas", () => {
@@ -293,7 +347,13 @@ test("larger photos preserve aspect ratio and have similar, immutable displayed 
         Math.abs(frame.x + frame.width / 2 - cell.x - cell.width / 2) < EPS,
       );
       const area = frame.width * frame.height;
-      assert.ok(area >= (layout.minimum * 2.2 * 0.94) ** 2 - EPS);
+      assert.ok(area >= 4 * (layout.minimum * 2.15 * 0.94) ** 2 - EPS);
+      assert.ok(area <= 4 * (layout.minimum * 2.15 * 1.06) ** 2 + EPS);
+      assert.deepEqual(
+        frame,
+        { x: cell.x, y: cell.y, width: cell.width, height: cell.height },
+        "photo leaves a border gap",
+      );
       areas.push(area);
       const size = [frame.width, frame.height];
       if (sizes.has(cell.photo.src))
@@ -312,6 +372,121 @@ test("larger photos preserve aspect ratio and have similar, immutable displayed 
   }
 });
 
+test("photo placement varies naturally while keeping overall coverage balanced", () => {
+  for (const width of [1920, 390]) {
+    const layout = createLayout(width, 844);
+    const pitch = layout.minimum * 1.9 * 4.5;
+    const view = {
+      x: -4 * pitch,
+      y: -4 * pitch,
+      width: 10 * pitch,
+      height: 10 * pitch,
+    };
+    for (const seed of [0, 1, 2, 3, 42, 4135253260, 0xffffffff]) {
+      const world = new GalleryWorld(collection, layout, seed);
+      world.ensureCoverage(view);
+      const frames = world.cells.filter((cell) => cell.photo);
+      const quarterCounts = [];
+      for (let y = -4; y < 6; y++)
+        for (let x = -4; x < 6; x++) {
+          const inQuarter = frames.filter(
+            (frame) =>
+              Math.floor((frame.x + frame.width / 2) / pitch) === x &&
+              Math.floor((frame.y + frame.height / 2) / pitch) === y,
+          );
+          quarterCounts.push(inQuarter.length);
+        }
+      assert.ok(
+        quarterCounts.some((count) => count === 0),
+        "forced one photo per quarter",
+      );
+      assert.ok(
+        quarterCounts.some((count) => count > 1),
+        "placement still follows a regular grid",
+      );
+      // Bound visible white space by distance to an actual image edge, rather
+      // than only counting photos. Samples include chunk edges and corners.
+      const distances = [];
+      for (let y = -4 * pitch; y <= 6 * pitch; y += pitch / 4)
+        for (let x = -4 * pitch; x <= 6 * pitch; x += pitch / 4) {
+          const distance = Math.min(
+            ...frames.map((frame) =>
+              Math.hypot(
+                Math.max(0, frame.x - x, x - frame.x - frame.width),
+                Math.max(0, frame.y - y, y - frame.y - frame.height),
+              ),
+            ),
+          );
+          distances.push(distance);
+          assert.ok(
+            distance < layout.minimum * 8,
+            `large white region at ${x},${y}: ${distance}`,
+          );
+        }
+      assert.ok(
+        distances.reduce((sum, value) => sum + value, 0) / distances.length <
+          layout.minimum * 2.1,
+        "photos are too clustered to give balanced coverage",
+      );
+    }
+  }
+});
+
+test("photo proportions constrain generation, with few crosses and no long blank rectangles", () => {
+  const corners = (cells, view) => {
+    const points = new Map();
+    for (const cell of cells)
+      for (const x of [cell.x, cell.x + cell.width]) {
+        for (const y of [cell.y, cell.y + cell.height]) {
+          if (
+            x <= view.x ||
+            x >= view.x + view.width ||
+            y <= view.y ||
+            y >= view.y + view.height
+          )
+            continue;
+          const key = `${x.toFixed(5)},${y.toFixed(5)}`;
+          points.set(key, (points.get(key) ?? 0) + 1);
+        }
+      }
+    return [...points.values()].filter((count) => count === 4).length;
+  };
+  const view = { x: -4000, y: -4000, width: 8000, height: 8000 };
+  for (const seed of [0, 1, 42, 4135253260]) {
+    const world = new GalleryWorld(collection, createLayout(1920, 1080), seed);
+    const empty = new GalleryWorld([], world.layout, seed);
+    world.ensureCoverage(view);
+    empty.ensureCoverage(view);
+    const cells = world.query(view);
+    assertTiled(cells, view);
+    const geometry = (items) =>
+      items.map(({ x, y, width, height }) => ({ x, y, width, height }));
+    assert.notDeepEqual(
+      geometry(cells),
+      geometry(empty.query(view)),
+      "photos did not influence rectangle generation",
+    );
+    const crossings = corners(cells, view);
+    assert.ok(
+      crossings < cells.length * 0.12,
+      `too many four-way junctions: ${crossings}/${cells.length}`,
+    );
+    for (const cell of world.cells) {
+      if (cell.photo)
+        assert.ok(
+          Math.abs(
+            cell.width / cell.height - cell.photo.width / cell.photo.height,
+          ) < EPS,
+        );
+      assert.ok(
+        Math.max(cell.width / cell.height, cell.height / cell.width) <=
+          2.5 + EPS,
+        "long thin rectangle",
+      );
+    }
+  }
+});
+
 test("repeat photos stay far apart and normal desktop/mobile views have no duplicates", () => {
   for (const [width, height] of [
     [1920, 1080],
@@ -324,20 +499,18 @@ test("repeat photos stay far apart and normal desktop/mobile views have no dupli
         const view = {
           x: -4200 + index * 737,
           y: -2700 + (index % 4) * 911,
-          width: width / 0.72,
-          height: height / 0.72,
+          width: width / 0.5,
+          height: height / 0.5,
         };
         world.ensureCoverage(view);
-        const inView = world
-          .query(view)
-          .filter(
-            (cell) =>
-              cell.photo &&
-              cell.photoFrame.x < view.x + view.width &&
-              cell.photoFrame.x + cell.photoFrame.width > view.x &&
-              cell.photoFrame.y < view.y + view.height &&
-              cell.photoFrame.y + cell.photoFrame.height > view.y,
-          );
+        const inView = selectVisiblePhotos(world.query(view), view).filter(
+          (cell) =>
+            cell.photo &&
+            cell.photoFrame.x < view.x + view.width &&
+            cell.photoFrame.x + cell.photoFrame.width > view.x &&
+            cell.photoFrame.y < view.y + view.height &&
+            cell.photoFrame.y + cell.photoFrame.height > view.y,
+        );
         assert.equal(
           new Set(inView.map((cell) => cell.photo.src)).size,
           inView.length,

@@ -1,6 +1,7 @@
 export type ArchivePhoto = {
   id: string;
   src: string;
+  fullSrc?: string;
   width: number;
   height: number;
   name: string;
@@ -48,6 +49,12 @@ export function parseGalleryManifest(
     return {
       id: photo.id,
       src: photo.src.startsWith("/") ? photo.src : `${baseUrl}${photo.src}`,
+      fullSrc:
+        typeof photo.fullSrc === "string"
+          ? photo.fullSrc.startsWith("/")
+            ? photo.fullSrc
+            : `${baseUrl}${photo.fullSrc}`
+          : undefined,
       width: photo.width,
       height: photo.height,
       name: typeof photo.name === "string" ? photo.name : photo.id,

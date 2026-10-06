@@ -23,6 +23,7 @@ import {
 } from "motion/react";
 import { profile, projects, thoughts } from "./content";
 import Landing, { supportingRevealDelay } from "./components/Landing";
+import FloatingDust from "./components/FloatingDust";
 import CursorMark from "./components/CursorMark";
 import LineRevealText from "./components/LineRevealText";
 import ScrambleText from "./components/ScrambleText";
@@ -31,6 +32,7 @@ import InfiniteGallery from "./components/InfiniteGallery";
 import InfiniteThoughts from "./components/InfiniteThoughts";
 import QuickIntroduction from "./components/QuickIntroduction";
 import ScrollCue from "./components/ScrollCue";
+import ProjectPreview from "./components/ProjectPreview";
 import { scrollPageTo } from "./components/scrollController";
 import { useTextReveals } from "./components/useTextReveals";
 import { ArchiveHeading, ArchiveRow } from "./pages/ArchiveLayout";
@@ -158,9 +160,11 @@ function Header() {
 function Page({
   children,
   className = "",
+  floatingDust = false,
 }: {
   children: ReactNode;
   className?: string;
+  floatingDust?: boolean;
 }) {
   const motionOff = useContext(MotionPreference);
   const navigationType = useNavigationType();
@@ -198,7 +202,15 @@ function Page({
     return () => window.removeEventListener("scroll", savePosition);
   }, [location.pathname, location.hash, location.key, navigationType]);
   return (
-    <main ref={ref} id="main" tabIndex={-1} className={className}>
+    <main
+      ref={ref}
+      id="main"
+      tabIndex={-1}
+      className={`${className}${floatingDust ? " has-floating-dust" : ""}`}
+    >
+      {floatingDust && (
+        <FloatingDust className="archive-page-dust" motionOff={motionOff} />
+      )}
       {children}
     </main>
   );
@@ -242,11 +254,11 @@ function Footer({
 
 function ProjectIndex() {
   const motionOff = useContext(MotionPreference);
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
-  const project = projects[active];
-  const previewImage = project.images[0];
+  const project = active === null ? null : projects[active];
+  const previewImage = project?.images[0];
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -269,19 +281,15 @@ function ProjectIndex() {
       className={`project-section${motionOff ? " is-still" : ""}${revealed ? " is-revealed" : ""}`}
       id="projects"
       data-scroll-section
-      style={{ "--project-accent": project.accent } as CSSProperties}
+      style={{ "--project-accent": project?.accent } as CSSProperties}
     >
-      <div className="landing-points" aria-hidden="true">
-        {Array.from({ length: 18 }, (_, index) => (
-          <span className="landing-point" key={index} />
-        ))}
-      </div>
+      <FloatingDust />
       <div className="project-layout">
         <div className="project-aside">
           <h2>Projects</h2>
           <div className="project-image-stage" aria-label="Project image area">
-            {previewImage && (
-              <img src={previewImage.src} alt={previewImage.alt} />
+            {(revealed || motionOff) && (
+              <ProjectPreview image={previewImage} motionOff={motionOff} />
             )}
           </div>
         </div>
@@ -293,7 +301,9 @@ function ProjectIndex() {
                 className={`project-row ${active === i ? "is-active" : ""}`}
                 to={`/projects/${p.slug}`}
                 onMouseEnter={() => setActive(i)}
+                onMouseLeave={() => setActive(null)}
                 onFocus={() => setActive(i)}
+                onBlur={() => setActive(null)}
                 style={
                   {
                     "--row-accent": p.accent,
@@ -381,7 +391,7 @@ function About({ motionOff }: { motionOff: boolean }) {
 function ProjectsArchive() {
   const motionOff = useContext(MotionPreference);
   return (
-    <Page className="archive-page">
+    <Page className="archive-page" floatingDust>
       <ArchiveHeading
         title="Projects"
         eyebrow="Work"
@@ -407,7 +417,7 @@ function ProjectsArchive() {
 function ThoughtsArchive() {
   const motionOff = useContext(MotionPreference);
   return (
-    <Page className="archive-page">
+    <Page className="archive-page" floatingDust>
       <ArchiveHeading
         title="Thoughts"
         eyebrow="Questions"
@@ -434,7 +444,7 @@ function ProjectDetail({ slug }: { slug: string }) {
   if (!project) return <NotFound />;
   const next = projects[(projects.indexOf(project) + 1) % projects.length];
   return (
-    <Page className="archive-page project-detail-page">
+    <Page className="archive-page project-detail-page" floatingDust>
       <ProjectDetailContent
         project={project}
         next={next}
@@ -475,7 +485,7 @@ function ThoughtDetail({ slug }: { slug: string }) {
   const thought = thoughts.find((t) => t.slug === slug);
   if (!thought) return <NotFound />;
   return (
-    <Page className="thought-detail">
+    <Page className="thought-detail" floatingDust>
       <Link to="/thoughts" className="back-link mono">
         ← <ScrambleText text="THOUGHTS" motionOff={motionOff} />
       </Link>
@@ -642,7 +652,7 @@ export default function App() {
               <Route
                 path="/gallery"
                 element={
-                  <Page className="archive-page">
+                  <Page className="archive-page" floatingDust>
                     <GalleryIndexContent motionOff={motionOff} />
                   </Page>
                 }
@@ -650,7 +660,7 @@ export default function App() {
               <Route
                 path="/gallery/:folder"
                 element={
-                  <Page className="archive-page">
+                  <Page className="archive-page" floatingDust>
                     <GalleryFolderContent motionOff={motionOff} />
                   </Page>
                 }

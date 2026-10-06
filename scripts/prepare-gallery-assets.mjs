@@ -1,4 +1,11 @@
-import { readdir, readFile, mkdir, stat, writeFile } from "node:fs/promises";
+import {
+  readdir,
+  readFile,
+  mkdir,
+  stat,
+  writeFile,
+  copyFile,
+} from "node:fs/promises";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import sharp from "sharp";
@@ -82,6 +89,10 @@ export async function prepareGallery({ sourceDirectory, outputDirectory }) {
         const sourceInfo = await stat(sourcePath);
         const { id, output } = identities.get(name);
         const outputPath = path.join(outputDirectory, output);
+        const extension = path.posix.extname(name).toLowerCase();
+        const isTiff = /\.tiff?$/.test(extension);
+        const fullOutput = `__originals__/${digest(name)}${isTiff ? ".png" : extension}`;
+        const fullPath = path.join(outputDirectory, fullOutput);
         const oldRecord = previousManifest?.records?.[name];
         let width = oldRecord?.width;
         let height = oldRecord?.height;
@@ -116,12 +127,29 @@ export async function prepareGallery({ sourceDirectory, outputDirectory }) {
             .webp({ quality: 78, effort: 4, smartSubsample: true })
             .toFile(outputPath);
         }
+        const fullCacheMatches =
+          oldRecord?.size === sourceInfo.size &&
+          oldRecord?.mtimeMs === sourceInfo.mtimeMs &&
+          oldRecord?.fullOutput === fullOutput &&
+          (await stat(fullPath).catch(() => null));
+        if (!fullCacheMatches) {
+          await mkdir(path.dirname(fullPath), { recursive: true });
+          // Browser-readable originals are copied unchanged. TIFF keeps every
+          // pixel in an oriented, lossless PNG so the viewer can display it.
+          if (isTiff)
+            await sharp(sourcePath, { failOn: "none" })
+              .rotate()
+              .png()
+              .toFile(fullPath);
+          else await copyFile(sourcePath, fullPath);
+        }
         const directory = path.posix.dirname(name);
         return {
           name,
           photo: {
             id,
             src: `gallery-assets/${output.split("/").map(encodeURIComponent).join("/")}`,
+            fullSrc: `gallery-assets/${fullOutput}?v=${sourceInfo.size.toString(36)}-${Math.trunc(sourceInfo.mtimeMs).toString(36)}`,
             width,
             height,
             name: path.posix.basename(name),
@@ -132,6 +160,7 @@ export async function prepareGallery({ sourceDirectory, outputDirectory }) {
             size: sourceInfo.size,
             mtimeMs: sourceInfo.mtimeMs,
             output,
+            fullOutput,
             width,
             height,
           },

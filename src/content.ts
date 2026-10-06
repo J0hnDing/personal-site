@@ -164,10 +164,10 @@ export const projects: Project[] = [
       "Active development. Automatic selection of stored memory facts and experience-driven self-improvement are unfinished; they are goals, not current capabilities.",
     images: [
       {
-        src: "/projects/eidolon-workspace.webp",
-        alt: "Eidolon's dark local workspace with conversation list, Project mode, and capability navigation.",
+        src: "/projects/eidolon-cover.webp",
+        alt: "Eidolon website introducing a local-first personal agent, with a preview of its weekly review workspace.",
         caption:
-          "Live capture · Project workspace in an isolated demo instance. No personal conversations.",
+          "Supplied screenshot · Eidolon's website and weekly review preview.",
       },
       {
         src: "/projects/eidolon-memory.webp",
@@ -317,9 +317,9 @@ export const projects: Project[] = [
       "The public repository shares screenshots and APK releases. Unity source files are not included, so the implementation details behind the game are not documented here.",
     images: [
       {
-        src: "/projects/cubic-gameplay.webp",
-        alt: "Cubic Level 1 screenshot with coral and teal cubic forms, and restart, home, and settings icons.",
-        caption: "Published screenshot · Level 1, from Cubic's public README.",
+        src: "/projects/cubic-cover.webp",
+        alt: "Three phone screens showing Cubic Levels 10, 1, and 19 with blue geometric platforms and coral and teal blocks.",
+        caption: "Supplied image · Cubic Levels 10, 1, and 19.",
       },
       {
         src: "/projects/cubic-level.webp",
@@ -408,7 +408,13 @@ export const projects: Project[] = [
     ],
     limitation:
       "Projector is designed for local development. Project files stay authoritative, and agent-reported completion waits for user approval before becoming accepted history.",
-    images: [],
+    images: [
+      {
+        src: "/projects/projector-cover.webp",
+        alt: "Projector's desktop interface showing the Personal-site overview, project counts, repository status, and project documents.",
+        caption: "Supplied screenshot · Projector's project overview.",
+      },
+    ],
     links: [
       {
         label: "Explore the source",

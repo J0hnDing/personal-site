@@ -52,3 +52,5 @@ Follow-up: restored only the roles' scroll-driven reveal and removed the name's 
 Follow-up: removed the period from the display name and changed its visible casing to `John` / `dinG`, preserving the equal-width stacked alignment.
 
 Follow-up: added a text-free open chevron at the bottom center of Home. It uses a subtle vertical drift and opacity pulse, fades out over the opening portion of the role-reveal scroll, and becomes static when motion is disabled or reduced.
+
+October 6 hero refinement: removed Navier–Stokes from the figure cycle and renderer. Lorenz now uses the shared strand treatment and camera, presents the butterfly plane with gentle rocking, and morphs continuously into and out of the other studies. Figure selection preserves the animation clock and pointer response; static selection still redraws immediately. Focused geometry/lifecycle tests, TypeScript, Vite build, and desktop/mobile browser checks passed.
