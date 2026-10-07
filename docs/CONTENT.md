@@ -35,6 +35,16 @@ The current 48 photographs have been visually classified into six source folders
 
 `npm run dev` and `npm run build` generate 1800-pixel WebP derivatives and a folder manifest under the ignored `public/gallery-assets/` directory; add or replace source photographs rather than editing generated files. Run `npm run prepare:gallery` and refresh the page after changes while the dev server is running. Home still uses the flat manifest photo list for its existing irregular spatial canvas.
 
+Full originals are generated under `public/gallery-assets/__originals__/` with
+content-based filenames. Browser-readable source files are copied without
+compression; TIFF uses lossless PNG. Local dev and preview serve these files
+directly. Cloudflare excludes this directory from Static Assets and serves it
+from the `GALLERY_ORIGINALS` R2 binding instead. Use `npm run deploy` locally or
+`npm run deploy:built` after the Cloudflare build; these upload the current
+manifest's originals before publishing the Worker. See the README for initial
+R2 setup. Updating a photograph gives it a new URL while old uploaded originals
+remain available for previous deployments and browser caches.
+
 ## Thoughts
 
 `thoughts` is an array of `Thought` records. Each record has a route `slug`, display `title`, `kind`, an `excerpt`, and ordered `blocks`. A block has one of three `type` values: `heading`, `paragraph`, or `quote`.

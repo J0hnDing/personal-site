@@ -5,6 +5,10 @@
   "type": "module",
   "scripts": {
     "prepare:gallery": "node scripts/prepare-gallery-assets.mjs",
+    "upload:gallery": "node scripts/upload-gallery-originals.mjs",
+    "deploy": "npm run build && npm run deploy:built",
+    "deploy:built": "npm run upload:gallery && wrangler deploy",
+    "version:built": "npm run upload:gallery && wrangler versions upload",
     "predev": "npm run prepare:gallery",
     "dev": "vite --host 127.0.0.1 --port 5173",
     "prebuild": "npm run prepare:gallery",

@@ -1,17 +1,11 @@
-import {
-  readdir,
-  readFile,
-  mkdir,
-  stat,
-  writeFile,
-  copyFile,
-} from "node:fs/promises";
+import { readdir, readFile, mkdir, stat, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import sharp from "sharp";
 import { fileURLToPath } from "node:url";
 
 const transformVersion = "webp-1800-q78-v1";
+const originalVersion = "content-addressed-v1";
 const imagePattern = /\.(jpe?g|png|webp|tiff?)$/i;
 const byName = (a, b) => a.localeCompare(b, undefined, { numeric: true });
 const digest = (value) => createHash("sha256").update(value).digest("hex");
@@ -91,9 +85,8 @@ export async function prepareGallery({ sourceDirectory, outputDirectory }) {
         const outputPath = path.join(outputDirectory, output);
         const extension = path.posix.extname(name).toLowerCase();
         const isTiff = /\.tiff?$/.test(extension);
-        const fullOutput = `__originals__/${digest(name)}${isTiff ? ".png" : extension}`;
-        const fullPath = path.join(outputDirectory, fullOutput);
         const oldRecord = previousManifest?.records?.[name];
+        let fullOutput = oldRecord?.fullOutput;
         let width = oldRecord?.width;
         let height = oldRecord?.height;
         const cacheMatches =
@@ -128,20 +121,28 @@ export async function prepareGallery({ sourceDirectory, outputDirectory }) {
             .toFile(outputPath);
         }
         const fullCacheMatches =
+          previousManifest?.originalVersion === originalVersion &&
           oldRecord?.size === sourceInfo.size &&
           oldRecord?.mtimeMs === sourceInfo.mtimeMs &&
-          oldRecord?.fullOutput === fullOutput &&
-          (await stat(fullPath).catch(() => null));
+          /^__originals__\/[a-f0-9]{64}\.(jpe?g|png|webp)$/.test(fullOutput) &&
+          (await stat(path.join(outputDirectory, fullOutput)).catch(
+            () => null,
+          ));
         if (!fullCacheMatches) {
-          await mkdir(path.dirname(fullPath), { recursive: true });
           // Browser-readable originals are copied unchanged. TIFF keeps every
           // pixel in an oriented, lossless PNG so the viewer can display it.
-          if (isTiff)
-            await sharp(sourcePath, { failOn: "none" })
-              .rotate()
-              .png()
-              .toFile(fullPath);
-          else await copyFile(sourcePath, fullPath);
+          const original = isTiff
+            ? await sharp(sourcePath, { failOn: "none" })
+                .rotate()
+                .png()
+                .toBuffer()
+            : await readFile(sourcePath);
+          // Content-based URLs survive fresh checkouts and can be cached
+          // immutably. Including the relative name keeps photo identities unique.
+          fullOutput = `__originals__/${digest(`${name}:${digest(original)}`)}${isTiff ? ".png" : extension}`;
+          const fullPath = path.join(outputDirectory, fullOutput);
+          await mkdir(path.dirname(fullPath), { recursive: true });
+          await writeFile(fullPath, original);
         }
         const directory = path.posix.dirname(name);
         return {
@@ -149,7 +150,7 @@ export async function prepareGallery({ sourceDirectory, outputDirectory }) {
           photo: {
             id,
             src: `gallery-assets/${output.split("/").map(encodeURIComponent).join("/")}`,
-            fullSrc: `gallery-assets/${fullOutput}?v=${sourceInfo.size.toString(36)}-${Math.trunc(sourceInfo.mtimeMs).toString(36)}`,
+            fullSrc: `gallery-assets/${fullOutput}`,
             width,
             height,
             name: path.posix.basename(name),
@@ -188,7 +189,13 @@ export async function prepareGallery({ sourceDirectory, outputDirectory }) {
       .filter((photo) => photo.folderId === folder.id)
       .map((photo) => photo.id);
   }
-  const manifest = { transformVersion, photos, folders, records };
+  const manifest = {
+    transformVersion,
+    originalVersion,
+    photos,
+    folders,
+    records,
+  };
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   return manifest;
 }

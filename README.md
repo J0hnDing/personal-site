@@ -14,6 +14,51 @@ npm run dev
 
 Open [the local preview](http://127.0.0.1:5173). `npm run build` type-checks and creates `dist/`; `npm run preview` serves that build on port 4173.
 
+## Cloudflare deployment and gallery originals
+
+Gallery previews and the application use Workers Static Assets. Full-resolution
+originals use the private R2 Standard bucket `john-ding-gallery-originals`, served
+by `workers/gallery-worker.mjs` at the same `/gallery-assets/__originals__/` URLs
+used locally. No public bucket domain
+or browser credentials are needed. JPEG, PNG, and WebP source bytes stay unchanged;
+TIFF sources retain the existing lossless PNG conversion for browser display.
+
+Enable R2 in the [Cloudflare dashboard](https://dash.cloudflare.com/) once, then:
+
+```powershell
+npx wrangler login
+npx wrangler r2 bucket create john-ding-gallery-originals
+npm run deploy
+```
+
+For Cloudflare Builds, keep the build command `npm run build` and set the deploy
+command to **`npm run deploy:built`**, replacing `npx wrangler deploy`. Set the
+non-production version command to **`npm run version:built`** so branch previews
+also upload any new original content before publishing a version. The build
+needs Git LFS source files as before. Wrangler must have permission to write R2
+objects and deploy Workers. Originals upload first; a failed upload stops the
+deployment so new gallery URLs cannot be published without their files.
+
+`npm run upload:gallery` uploads only originals referenced by the generated
+manifest, verifies their content hashes, and sets image MIME types and immutable
+cache metadata. Uploads use Standard storage (the class with the R2 free tier).
+Fresh checkouts generate the same original keys regardless of filesystem dates.
+Old R2 objects are retained for cached URLs and deployment rollbacks; uploads
+never delete objects. Monitor storage as photographs are replaced over time.
+
+`public/.assetsignore` is copied to `dist/` by Vite and excludes all full originals
+from Wrangler's static asset upload, including images larger than 25 MiB. Local
+Vite development and `npm run preview` still serve the full files from disk.
+`npm run upload:gallery -- --local` seeds Wrangler's local R2 emulator for testing;
+after building, run `npx wrangler dev` to test the actual Worker route locally.
+The Worker streams originals, supports GET/HEAD and ETag revalidation, and caches
+successful GETs at the edge. Its requests use Workers quotas as well as R2
+operations; other site assets continue through Static Assets.
+
+References: [R2 Worker bindings](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/),
+[static asset exclusions and routing](https://developers.cloudflare.com/workers/static-assets/binding/),
+and [R2 pricing](https://developers.cloudflare.com/r2/pricing/).
+
 ## Content
 
 Edit `src/content.ts` for the profile, projects, thoughts, and contact details, and `src/pages/AboutPage.tsx` for the longer biography. See [the content guide](docs/CONTENT.md) for the image workflow. Project facts and contact details remain blank until confirmed. Gallery photographs come from `photos/` and its subfolders; local build and dev scripts create optimized derivatives without modifying the originals. Thoughts lists John’s supplied questions; article bodies await his writing.

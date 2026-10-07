@@ -1,9 +1,18 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "john-ding",
+  "main": "workers/gallery-worker.mjs",
   "compatibility_date": "2026-09-15",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
-  }
+    "binding": "ASSETS",
+    "run_worker_first": ["/gallery-assets/__originals__/*"],
+    "not_found_handling": "single-page-application",
+  },
+  "r2_buckets": [
+    {
+      "binding": "GALLERY_ORIGINALS",
+      "bucket_name": "john-ding-gallery-originals",
+    },
+  ],
 }

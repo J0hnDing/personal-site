@@ -47,7 +47,10 @@ function PixelPortrait({
       const progress = reveal
         ? Math.min(
             1,
-            (performance.now() - reveal.startedAt) / reveal.durationMs,
+            Math.max(
+              0,
+              (performance.now() - reveal.startedAt) / reveal.durationMs,
+            ),
           )
         : 0;
       if (!width || !height) return;
@@ -131,7 +134,7 @@ export default function QuickIntroduction({
   const startReveal = useCallback(() => {
     setReveal(
       (previous) =>
-        previous ?? { startedAt: performance.now(), durationMs: 800 },
+        previous ?? { startedAt: performance.now() + 500, durationMs: 800 },
     );
   }, []);
 

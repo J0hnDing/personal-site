@@ -91,15 +91,23 @@ test("portrait frames avoid layout reads and keep the resolved canvas on resize"
   });
   const rendered = exports.PixelPortrait({
     motionOff: false,
-    reveal: { startedAt: 0, durationMs: 800 },
+    reveal: { startedAt: 500, durationMs: 800 },
   });
   assert.ok(contexts.every((options) => options.willReadFrequently));
   assert.equal(layoutReads, 1);
-  for (const time of [200, 400, 600, 800]) {
+  const initialSampleWidth = sample.width;
+  for (const time of [200, 499, 500, 700, 900, 1100, 1300]) {
     now = time;
     const pending = [...frames.values()];
     frames.clear();
     pending.forEach((callback) => callback());
+    if (time <= 500) {
+      assert.equal(sample.width, initialSampleWidth);
+      assert.equal(resolvedUpdates, 0);
+    } else if (time < 1300) {
+      assert.ok(sample.width > initialSampleWidth);
+      assert.equal(resolvedUpdates, 0);
+    }
   }
   assert.equal(layoutReads, 1);
   assert.equal(resolvedUpdates, 1);

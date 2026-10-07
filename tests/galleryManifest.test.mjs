@@ -1,11 +1,24 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, rm, stat, unlink } from "node:fs/promises";
+import {
+  mkdtemp,
+  mkdir,
+  readFile,
+  rm,
+  stat,
+  unlink,
+  utimes,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import sharp from "sharp";
 import ts from "typescript";
 import { prepareGallery } from "../scripts/prepare-gallery-assets.mjs";
+import {
+  galleryUploads,
+  galleryBucket,
+} from "../scripts/upload-gallery-originals.mjs";
 
 const source = await readFile(
   new URL("../src/galleryManifest.ts", import.meta.url),
@@ -60,10 +73,7 @@ test("recursive real folders preserve root IDs and avoid duplicate filename coll
     name: "DSC_001.jpg",
     folderId: "all-photographs",
   });
-  assert.match(
-    fullSrc,
-    /^gallery-assets\/__originals__\/[a-f0-9]{64}\.jpg\?v=[a-z0-9]+-[a-z0-9]+$/,
-  );
+  assert.match(fullSrc, /^gallery-assets\/__originals__\/[a-f0-9]{64}\.jpg$/);
   assert.equal(new Set(manifest.photos.map((entry) => entry.fullSrc)).size, 5);
   const root = manifest.folders.find((entry) => entry.id === "all-photographs");
   assert.deepEqual(root.photoIds, ["DSC_001"]);
@@ -214,5 +224,71 @@ test("full-resolution files preserve originals and recover independently of prev
     revised.photos.find((photo) => photo.id === "Large").fullSrc,
     originalUrl,
   );
-  assert.equal((await sharp(await readFile(original)).metadata()).width, 2600);
+  const revisedOriginal = path.join(
+    options.outputDirectory,
+    revised.records["Large.jpg"].fullOutput,
+  );
+  assert.equal(
+    (await sharp(await readFile(revisedOriginal)).metadata()).width,
+    2600,
+  );
+  // Old URLs remain valid while newer deployments refer to updated bytes.
+  assert.equal((await sharp(await readFile(original)).metadata()).width, 2400);
+});
+
+test("R2 keys survive checkout timestamps and uploads verify exact original bytes", async (t) => {
+  const options = await fixture(t);
+  await photo(options.sourceDirectory, "Original.png");
+  const first = await prepareGallery(options);
+  const date = new Date("2025-01-01T00:00:00Z");
+  await utimes(path.join(options.sourceDirectory, "Original.png"), date, date);
+  const second = await prepareGallery(options);
+  assert.equal(first.photos[0].fullSrc, second.photos[0].fullSrc);
+  const uploads = await galleryUploads({
+    outputDirectory: options.outputDirectory,
+    manifest: second,
+  });
+  assert.equal(uploads.length, 1);
+  assert.equal(uploads[0].key, second.records["Original.png"].fullOutput);
+  assert.equal(uploads[0].contentType, "image/png");
+  assert.deepEqual(
+    await readFile(uploads[0].filename),
+    await readFile(path.join(options.sourceDirectory, "Original.png")),
+  );
+  await writeFile(uploads[0].filename, "tampered");
+  await assert.rejects(
+    galleryUploads({
+      outputDirectory: options.outputDirectory,
+      manifest: second,
+    }),
+    /content changed/,
+  );
+  const invalid = {
+    ...second,
+    records: { bad: { fullOutput: "../private.txt" } },
+  };
+  await assert.rejects(
+    galleryUploads({
+      outputDirectory: options.outputDirectory,
+      manifest: invalid,
+    }),
+    /Invalid original/,
+  );
+});
+
+test("uploader reads the R2 binding from Wrangler JSONC", async () => {
+  assert.equal(
+    galleryBucket(
+      await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
+    ),
+    "john-ding-gallery-originals",
+  );
+  assert.equal(
+    galleryBucket(
+      '{/* comment */ "r2_buckets": [{"binding":"GALLERY_ORIGINALS","bucket_name":"custom",},],}',
+    ),
+    "custom",
+  );
+  assert.throws(() => galleryBucket("{bad"), /parse/);
+  assert.throws(() => galleryBucket("{}"), /missing/);
 });

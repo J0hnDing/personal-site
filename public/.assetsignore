@@ -1,0 +1,3 @@
+# Originals are served by the Worker from R2. Vite retains them locally for
+# development and preview, but Wrangler must never upload them as static assets.
+/gallery-assets/__originals__/**
